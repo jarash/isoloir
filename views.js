@@ -160,39 +160,76 @@ export function vote(data) {
 
 // --- Résultats --------------------------------------------------------------------------------------------------
 
-function bar(row, max) {
+// Une teinte par candidat, dans l'ordre fixe de la palette (jamais recyclée) ; le blanc est toujours gris.
+const slot = (i) => (i < 8 ? `s${i + 1}` : 'other');
+
+function bar(row, max, color) {
   // Largeur relative au premier : la barre la plus longue occupe toute la piste.
   const width = max ? Math.max((row.n / max) * 100, row.n ? 1.5 : 0) : 0;
   // Des largeurs en % dans les attributs SVG : la CSP interdit les attributs style.
   return `<svg class="bar" width="100%" height="16" aria-hidden="true">
     <rect class="track" x="0" y="0" width="100%" height="16" rx="4"/>
-    ${row.n ? `<rect class="fill${row.against ? ' against' : ''}" x="0" y="0" width="${width.toFixed(2)}%" height="16" rx="4"><title>${e(row.label)} : ${row.n} voix (${pct(row.pct)})</title></rect>` : ''}
+    ${row.n ? `<rect class="fill ${color}" x="0" y="0" width="${width.toFixed(2)}%" height="16" rx="4"><title>${e(row.label)} : ${row.n} voix (${pct(row.pct)})</title></rect>` : ''}
   </svg>`;
 }
 
-function positionResult(p) {
+// La répartition de tous les bulletins du poste, blancs compris, sur une seule barre ; le repère marque la majorité
+// absolue des suffrages exprimés.
+function distribution(p, index) {
+  if (p.total === 0) return '';
+  const parts = [...p.rows.map((r, i) => ({ label: r.label, n: r.n, color: slot(i) })), { label: 'Blanc', n: p.blank, color: 'blank' }];
+  let x = 0;
+  const segments = parts.filter((part) => part.n).map((part) => {
+    const width = (part.n / p.total) * 100;
+    const rect = `<rect class="seg ${part.color}" x="${x.toFixed(2)}%" y="6" width="${width.toFixed(2)}%" height="20"><title>${e(part.label)} : ${plural(part.n, 'bulletin', 'bulletins')} sur ${p.total} (${pct(width)})</title></rect>`;
+    x += width;
+    return rect;
+  }).join('');
+  const majority = p.expressed ? (p.expressed / 2 / p.total) * 100 : null;
+  const threshold = Math.floor(p.expressed / 2) + 1;
+  return `<figure class="distribution">
+    <svg width="100%" height="32" role="img" aria-label="Répartition des ${p.total} bulletins du poste ${e(p.name)}">
+      <defs><clipPath id="clip-${index}"><rect x="0" y="6" width="100%" height="20" rx="4"/></clipPath></defs>
+      <g clip-path="url(#clip-${index})">${segments}</g>
+      ${majority !== null ? `<line class="majority" x1="${majority.toFixed(2)}%" x2="${majority.toFixed(2)}%" y1="0" y2="32"/>` : ''}
+    </svg>
+    <figcaption class="muted small">Répartition des ${p.total} bulletins${majority !== null ? ` · <span class="majority-key" aria-hidden="true"></span> majorité absolue : ${plural(threshold, 'voix', 'voix')}` : ''}</figcaption>
+  </figure>`;
+}
+
+function positionResult(p, index) {
   const max = Math.max(0, ...p.rows.map((r) => r.n));
   let verdict;
   if (p.total === 0) verdict = '<p class="verdict muted">Aucun bulletin.</p>';
   else if (p.tie) verdict = `<p class="verdict tie">⚠ Égalité entre ${p.elected.map(e).join(' et ')} : à départager.</p>`;
-  else if (p.elected.length) verdict = `<p class="verdict elected">✓ <strong>${e(p.elected[0])}</strong> est élu·e.</p>`;
-  else verdict = `<p class="verdict rejected">✗ ${e(p.candidate)} n’est pas élu·e.</p>`;
+  else if (p.elected.length) {
+    const top = Math.max(...p.rows.map((r) => r.n));
+    const kind = p.single || top > p.expressed / 2 ? 'majorité absolue' : 'majorité relative';
+    verdict = `<p class="verdict elected">✓ <strong>${e(p.elected[0])}</strong> est élu·e <span class="muted">(${kind})</span>.</p>`;
+  } else verdict = `<p class="verdict rejected">✗ ${e(p.candidate)} n’est pas élu·e.</p>`;
 
-  const rows = p.rows.map((r) => `<tr class="${r.winner && !p.tie ? 'is-winner' : ''}">
-      <th scope="row">${e(r.label)}${r.winner && !p.tie ? ' <span class="badge">Élu·e</span>' : ''}</th>
-      <td class="bar-cell">${bar(r, max)}</td>
+  const rows = p.rows.map((r, i) => `<tr class="${r.winner && !p.tie ? 'is-winner' : ''}">
+      <th scope="row"><span class="swatch ${slot(i)}" aria-hidden="true"></span>${e(r.label)}${r.winner && !p.tie ? ' <span class="badge">Élu·e</span>' : ''}</th>
+      <td class="bar-cell">${bar(r, max, slot(i))}</td>
       <td class="num">${r.n}</td>
       <td class="num pct">${pct(r.pct)}</td>
     </tr>`).join('');
+  const blankRow = `<tr class="blank-row">
+      <th scope="row"><span class="swatch blank" aria-hidden="true"></span>Blanc</th>
+      <td></td>
+      <td class="num">${p.blank}</td>
+      <td class="num pct" title="Les blancs ne comptent pas dans les suffrages exprimés">–</td>
+    </tr>`;
   return `<section class="card result">
     <h2>${e(p.name)}${p.single ? ` <span class="muted">· ${e(p.candidate)}</span>` : ''}</h2>
     ${verdict}
+    ${distribution(p, index)}
     <table class="bars">
       <caption class="sr-only">Résultats du poste ${e(p.name)}</caption>
-      <thead><tr><th scope="col">${p.single ? 'Réponse' : 'Candidat·e'}</th><th scope="col"><span class="sr-only">Graphique</span></th><th scope="col" class="num">Voix</th><th scope="col" class="num">%</th></tr></thead>
-      <tbody>${rows}</tbody>
+      <thead><tr><th scope="col">${p.single ? 'Réponse' : 'Candidat·e'}</th><th scope="col"><span class="sr-only">Graphique</span></th><th scope="col" class="num">Voix</th><th scope="col" class="num">% exprimés</th></tr></thead>
+      <tbody>${rows}${blankRow}</tbody>
     </table>
-    <p class="muted small">${plural(p.expressed, 'suffrage exprimé', 'suffrages exprimés')} · ${plural(p.blank, 'vote blanc', 'votes blancs')} (non comptés dans les %)</p>
+    <p class="muted small">${plural(p.expressed, 'suffrage exprimé', 'suffrages exprimés')} · les blancs ne comptent pas dans les %</p>
   </section>`;
 }
 

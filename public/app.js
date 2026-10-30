@@ -21,7 +21,15 @@ if (participation?.dataset.src) {
       const response = await fetch(participation.dataset.src, { headers: { Accept: 'application/json' } });
       if (!response.ok) return;
       const data = await response.json();
-      for (const field of participation.querySelectorAll('[data-field]')) field.textContent = data[field.dataset.field];
+      for (const field of document.querySelectorAll('#participation [data-field], [data-quorum] [data-field]')) {
+        field.textContent = data[field.dataset.field];
+      }
+      const quorum = document.querySelector('[data-quorum]');
+      if (quorum) {
+        quorum.classList.toggle('reached', data.quorumReached);
+        quorum.classList.toggle('missing', !data.quorumReached);
+        quorum.querySelector('[data-meter]')?.setAttribute('width', data.meter);
+      }
     } catch {
       // Réseau coupé un instant : on réessaiera au prochain tour.
     }

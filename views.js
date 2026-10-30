@@ -40,6 +40,28 @@ function version() {
   return modified ? `${link} <span class="warn" title="Le serveur tourne avec des modifications non commitées : ce code n’est pas celui publié.">(modifiée)</span>` : link;
 }
 
+// La description saisie par l'admin, en texte simple : paragraphes séparés par une ligne vide, lignes « - » en liste,
+// **gras**, liens http(s). Tout est échappé d'abord : aucun HTML saisi ne passe.
+export function richText(text) {
+  const inline = (line) => e(line)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a href="${url}" rel="noopener noreferrer">${url}</a>`);
+  return String(text ?? '').split(/\n\s*\n/).filter((block) => block.trim()).map((block) => {
+    const lines = block.split('\n');
+    if (lines.every((line) => /^\s*[-•]\s+/.test(line))) {
+      return `<ul>${lines.map((line) => `<li>${inline(line.replace(/^\s*[-•]\s+/, ''))}</li>`).join('')}</ul>`;
+    }
+    return `<p>${lines.map(inline).join('<br>')}</p>`;
+  }).join('');
+}
+
+function about(description, { collapsed = false } = {}) {
+  if (!description) return '';
+  return collapsed
+    ? `<details class="card about"><summary><strong>Infos du scrutin</strong></summary><div class="rich">${richText(description)}</div></details>`
+    : `<section class="card about"><div class="rich">${richText(description)}</div></section>`;
+}
+
 const csrfField = (csrf) => `<input type="hidden" name="_csrf" value="${e(csrf)}">`;
 
 function button(action, csrf, label, { kind = '', confirm = '', fields = '' } = {}) {
@@ -93,7 +115,7 @@ export function error(message) {
 // --- Accueil ----------------------------------------------------------------------------------------------------
 
 export function home(data) {
-  const { user, status, voices, resultsPublic, title } = data;
+  const { user, status, voices, resultsPublic, title, description } = data;
   let body;
   if (!user) {
     body = `<section class="card hero">
@@ -124,7 +146,8 @@ export function home(data) {
       <h2>Vos voix</h2>
       <ul class="voices">${list}</ul>
       ${action}
-    </section>`;
+    </section>
+    ${about(description)}`;
   }
   return layout(data, 'Accueil', body);
 }
@@ -179,6 +202,7 @@ export function vote(data) {
     ? '<p>Vous détenez plusieurs voix : chacune a son propre bulletin, à remplir selon les consignes de votre mandant.</p>'
     : '';
   return layout(data, 'Vote', `<h1>${e(title)}</h1>
+    ${about(data.description, { collapsed: true })}
     ${intro}
     ${done ? `<ul class="voices card">${done}</ul>` : ''}
     ${forms || '<section class="card"><p><strong class="ok">Toutes vos voix ont voté. Merci !</strong></p><p class="muted">Les résultats seront annoncés à la clôture.</p></section>'}`);
@@ -259,9 +283,47 @@ function positionResult(p, index) {
   </section>`;
 }
 
+// --- Quorum -----------------------------------------------------------------------------------------------------
+
+export function quorumLabel(q) {
+  if (!q.set) return 'Quorum non renseigné';
+  const detail = `${q.total} présents ou représentés sur ${plural(q.required, 'requis', 'requis')}`;
+  if (!q.counted) return `Quorum : ${plural(q.required, 'membre requis', 'membres requis')}, nombre de présents à saisir`;
+  return q.reached ? `Quorum atteint ✓ (${detail})` : `Quorum non atteint : ${detail}, il en manque ${q.required - q.total}`;
+}
+
+export const quorumDetail = (q) => `${plural(q.present ?? 0, 'présent', 'présents')} + ${plural(q.represented, 'représenté par procuration', 'représentés par procuration')}`;
+
+// La jauge va de 0 aux inscrits (ou au quorum si on ne les connaît pas) ; le repère marque le quorum.
+const meterScale = (q) => q.members ?? q.required;
+export const quorumMeterWidth = (q) => (q.set ? `${Math.min(100, (q.total / meterScale(q)) * 100).toFixed(2)}%` : '0%');
+
+function quorumMeter(q) {
+  if (!q.set) return '';
+  const mark = (q.required / meterScale(q)) * 100;
+  return `<svg class="quorum-meter" width="100%" height="28" aria-hidden="true">
+    <rect class="track" x="0" y="6" width="100%" height="16" rx="4"/>
+    <rect class="fill" data-meter x="0" y="6" width="${quorumMeterWidth(q)}" height="16" rx="4"/>
+    <line class="majority" x1="${mark.toFixed(2)}%" x2="${mark.toFixed(2)}%" y1="0" y2="28"/>
+  </svg>`;
+}
+
+function quorumBlock(q, { live = false } = {}) {
+  if (!q.set) return '';
+  return `<div class="quorum ${q.reached ? 'reached' : 'missing'}"${live ? ' data-quorum' : ''}>
+    <p class="quorum-label"><span data-field="quorumLabel">${e(quorumLabel(q))}</span></p>
+    ${quorumMeter(q)}
+    <p class="muted small"><span data-field="quorumDetail">${e(quorumDetail(q))}</span> ·
+      <span class="majority-key" aria-hidden="true"></span> quorum : ${q.unit === 'percent' ? `${q.value} % de ${q.members} membres, soit ` : ''}${plural(q.required, 'membre', 'membres')}${q.members && q.unit !== 'percent' ? ` sur ${q.members} inscrits` : ''}</p>
+  </div>`;
+}
+
 export function discordSummary(title, results) {
   const { participation: part } = results;
-  const lines = [`**${title} — résultats**`, `Participation : ${plural(part.total, 'voix', 'voix')}${part.proxies ? ` (dont ${plural(part.proxies, 'procuration', 'procurations')})` : ''}`, ''];
+  const q = results.quorum;
+  const lines = [`**${title} — résultats**`, `Participation : ${plural(part.total, 'voix', 'voix')}${part.proxies ? ` (dont ${plural(part.proxies, 'procuration', 'procurations')})` : ''}`];
+  if (q.set) lines.push(quorumLabel(q), ...(q.counted ? [`> ${quorumDetail(q)}`] : []));
+  lines.push('');
   for (const p of results.positions) {
     let head;
     if (p.tie) head = `égalité entre ${p.elected.join(' et ')}`;
@@ -292,7 +354,9 @@ export function results(data) {
       <p class="kpis">
         <span><strong>${part.total}</strong> ${part.total > 1 ? 'voix exprimées' : 'voix exprimée'}</span>
         <span><strong>${part.proxies}</strong> par procuration</span>
+        ${r.quorum.rate !== null ? `<span><strong>${pct(r.quorum.rate)}</strong> des ${r.quorum.members} membres présents ou représentés</span>` : ''}
       </p>
+      ${r.quorum.set ? `<p class="flash ${r.quorum.reached ? 'ok' : 'error'}">${e(quorumLabel(r.quorum))}${r.quorum.reached ? '' : '. Vérifiez ce que prévoient vos statuts.'}${r.quorum.counted ? `<br><span class="small">${e(quorumDetail(r.quorum))}</span>` : ''}</p>` : ''}
     </header>
     <div class="results-grid">${r.positions.map(positionResult).join('')}</div>
     ${admin}`, { wide: true });
@@ -300,8 +364,16 @@ export function results(data) {
 
 // --- Administration ---------------------------------------------------------------------------------------------
 
+const DESCRIPTION_EXAMPLE = `Bienvenue à l’AG !
+
+- Le vote ouvre après la présentation des candidats, et dure 15 minutes.
+- **Quorum** : la moitié des membres à jour de cotisation, présents ou représentés.
+- Une procuration par membre au plus.
+
+Vote blanc ou abstention possibles poste par poste.`;
+
 export function admin(data) {
-  const { status, positions, proxies, participation: part, csrf, title, resultsPublic, maxProxies } = data;
+  const { status, positions, proxies, participation: part, quorum: q, csrf, title, resultsPublic, maxProxies } = data;
   const draft = status === 'draft';
 
   const actions = {
@@ -351,6 +423,12 @@ export function admin(data) {
           <input name="title" value="${e(title)}" required maxlength="120" aria-label="Titre du scrutin"><button>Renommer</button></form>`
         : `<p><strong>${e(title)}</strong></p>`}
       <div class="row">${actions}</div>
+      <form method="post" action="/admin/description" class="stack description-form">${csrfField(csrf)}
+        <label>Description <span class="muted small">(affichée aux membres connectés : accueil et bulletin)</span>
+          <textarea name="description" rows="8" maxlength="4000" placeholder="${e(DESCRIPTION_EXAMPLE)}">${e(data.description)}</textarea></label>
+        <p class="muted small">Une ligne vide sépare les paragraphes · une ligne qui commence par « - » fait une liste · **gras** · les liens https:// sont cliquables.</p>
+        <div><button>Enregistrer la description</button></div>
+      </form>
       ${status === 'closed' ? `<p class="muted small">${resultsPublic ? 'Résultats publiés aux membres.' : 'Résultats visibles des seuls admins.'}</p>` : ''}
     </section>
 
@@ -359,6 +437,26 @@ export function admin(data) {
       <p class="kpi" id="participation" data-src="${status === 'open' ? '/admin/participation' : ''}">
         <strong data-field="total">${part.total}</strong> ${part.total > 1 ? 'voix ont' : 'voix a'} voté,
         dont <strong data-field="proxies">${part.proxies}</strong> par procuration</p>
+      ${quorumBlock(q, { live: true })}
+      ${q.set ? `<form method="post" action="/admin/present" class="row present-form">${csrfField(csrf)}
+          <label for="present">Membres présents (comptés sur Discord)</label>
+          <input id="present" name="present" type="number" min="0" step="1" inputmode="numeric" value="${e(q.present ?? '')}" placeholder="24">
+          <button class="primary">Mettre à jour</button>
+        </form>
+        <p class="muted small">Les ${plural(q.represented, 'procuration enregistrée s’ajoute', 'procurations enregistrées s’ajoutent')} automatiquement aux présents. Ne comptez pas les mandants : ils sont absents.</p>` : ''}
+      <details class="quorum-settings"${q.set ? '' : ' open'}><summary>${q.set ? 'Modifier le quorum' : 'Renseigner le quorum'}</summary>
+        <form method="post" action="/admin/quorum" class="grid-form">${csrfField(csrf)}
+          <label>Membres inscrits <input name="members" type="number" min="1" step="1" inputmode="numeric" value="${e(q.members ?? '')}" placeholder="52"></label>
+          <label>Quorum <input name="quorum_value" type="number" min="1" step="1" inputmode="numeric" value="${e(q.value ?? '')}" placeholder="50"></label>
+          <label>Exprimé en
+            <select name="quorum_unit">
+              <option value="percent"${q.unit !== 'count' ? ' selected' : ''}>% des membres inscrits</option>
+              <option value="count"${q.unit === 'count' ? ' selected' : ''}>nombre de membres</option>
+            </select></label>
+          <button>Enregistrer</button>
+        </form>
+        <p class="muted small">Quorum = membres présents (saisis ci-dessus) + membres représentés (procurations). « 50 % » signifie au moins la moitié, arrondie au membre supérieur ; pour « plus de la moitié », indiquez le nombre exact. Laissez vide pour ne pas suivre de quorum.</p>
+      </details>
       <details><summary>Émargement (qui a voté, jamais pour qui)</summary>
         <ul class="columns">${part.names.map((n) => `<li>${e(n)}</li>`).join('') || '<li class="muted">Personne pour l’instant.</li>'}</ul>
         <p class="muted small">Rechargez la page pour mettre la liste à jour.</p>

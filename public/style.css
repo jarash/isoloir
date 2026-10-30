@@ -209,6 +209,25 @@ label.check { flex-direction: row; align-items: center; gap: .5rem; font-weight:
 .person { opacity: .7; }
 .link.small { font-size: .85rem; }
 .card.new-position { border-style: dashed; }
+.quorum { margin: .75rem 0; }
+.present-form label { font-weight: 600; flex-basis: 100%; }
+.present-form input { flex: 0 1 8rem; }
+.quorum-label { font-weight: 700; margin: 0 0 .25rem; }
+.quorum.reached .quorum-label { color: var(--good); }
+.quorum.missing .quorum-label { color: var(--warning); }
+.quorum-meter { display: block; overflow: visible; }
+.quorum-meter .track { fill: var(--track); }
+.quorum-meter .fill { fill: var(--s1); }
+.quorum.reached .quorum-meter .fill { fill: var(--good); }
+.quorum-meter .majority, .distribution .majority { stroke: var(--text-primary); stroke-width: 2px; stroke-dasharray: 3 2; }
+.quorum-settings summary, .about summary { cursor: pointer; }
+select { font: inherit; padding: .5rem .65rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary); }
+.about[open] summary { margin-bottom: .5rem; }
+.rich > :first-child { margin-top: 0; }
+.rich > :last-child { margin-bottom: 0; }
+.rich ul { padding-left: 1.2rem; }
+.description-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.description-form textarea { font-family: inherit; font-size: .95rem; }
 .card.danger-zone { border-color: color-mix(in srgb, var(--brand-red) 55%, var(--border)); }
 .card.danger-zone h2 { color: var(--brand-red); }
 .kpi { font-size: 1.1rem; }

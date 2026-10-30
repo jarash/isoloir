@@ -27,7 +27,7 @@ Voir [docs/deploiement.md](docs/deploiement.md) : application Discord, `.env.loc
 
 ## Le déroulé d'une AG
 
-1. **Avant** (état *En préparation*) : dans **Administration**, renommer le scrutin, créer les postes et leurs candidats, saisir les procurations reçues. Les procurations peuvent encore être ajoutées pendant le vote, pour les retardataires.
+1. **Avant** (état *En préparation*) : dans **Administration**, renommer le scrutin, créer les postes et leurs candidats, saisir les procurations reçues, et renseigner le quorum (membres inscrits et seuil). Pendant l'AG, taper le nombre de **présents** comptés dans le salon vocal : l'appli y ajoute les procurations et dit si le quorum est atteint. Les procurations peuvent encore être ajoutées pendant le vote, pour les retardataires.
 2. **Ouvrir le vote** : postes et candidats sont figés. Les membres se connectent et votent ; la participation s'affiche en direct, et l'émargement donne la liste de qui a voté (jamais pour qui).
 3. **Clore le vote** : les résultats apparaissent pour les admins. Partage ton écran sur Discord pour les annoncer, puis, si tu veux, **Publier aux membres** et copie le résumé dans un salon.
 4. **Nouveau tour** (s'il faut départager une égalité, ou pour un second tour) : efface votes et émargement. Pense à copier les résultats d'abord. Postes, candidats et procurations restent, et redeviennent modifiables.

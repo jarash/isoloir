@@ -78,7 +78,10 @@ function transaction(fn) {
 
 // --- Réglages ---------------------------------------------------------------------------------------------------
 
-const DEFAULTS = { title: 'Élection du bureau', status: 'draft', results_public: '0' };
+const DEFAULTS = {
+  title: 'Élection du bureau', status: 'draft', results_public: '0', description: '',
+  members: '', quorum_value: '', quorum_unit: 'percent', present: '',
+};
 
 export function setting(key) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
@@ -168,6 +171,12 @@ export function setTitle(title) {
   const t = clean(title, 120);
   if (!t) throw new VoteError('Le titre ne peut pas être vide.');
   setSetting('title', t);
+}
+
+// Le texte de présentation (déroulé, quorum…) : modifiable à tout moment, même pendant le vote.
+export function setDescription(text) {
+  const t = String(text ?? '').replace(/\r\n?/g, '\n').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 4000);
+  setSetting('description', t);
 }
 
 export function addPosition(name) {
@@ -344,6 +353,50 @@ export function participation() {
   };
 }
 
+// --- Quorum ---------------------------------------------------------------------------------------------------
+
+// Le quorum porte sur les membres présents ou représentés à l'AG, pas sur les votants. Les présents sont comptés par
+// l'admin (le salon vocal Discord) ; les représentés sont les procurations enregistrées.
+const toInt = (text) => (String(text ?? '').trim() === '' ? null : Number(String(text).trim()));
+
+export function setQuorum({ members, value, unit }) {
+  const m = toInt(members);
+  const v = toInt(value);
+  const u = unit === 'count' ? 'count' : 'percent';
+  if (m !== null && (!Number.isInteger(m) || m < 1 || m > 100000)) throw new VoteError('Le nombre de membres doit être un nombre entier positif.');
+  if (v !== null && (!Number.isInteger(v) || v < 1)) throw new VoteError('Le quorum doit être un nombre entier positif.');
+  if (v !== null && u === 'percent' && v > 100) throw new VoteError('Un quorum en pourcentage ne peut pas dépasser 100 %.');
+  if (v !== null && u === 'percent' && m === null) throw new VoteError('Pour un quorum en pourcentage, indiquez le nombre de membres.');
+  if (v !== null && u === 'count' && m !== null && v > m) throw new VoteError('Le quorum ne peut pas dépasser le nombre de membres.');
+  setSetting('members', m ?? '');
+  setSetting('quorum_value', v ?? '');
+  setSetting('quorum_unit', u);
+}
+
+export function setPresent(count) {
+  const p = toInt(count);
+  if (p !== null && (!Number.isInteger(p) || p < 0 || p > 100000)) throw new VoteError('Le nombre de présents doit être un nombre entier.');
+  setSetting('present', p ?? '');
+}
+
+export function quorum() {
+  const members = Number(setting('members')) || null;
+  const value = Number(setting('quorum_value')) || null;
+  const unit = setting('quorum_unit');
+  const present = toInt(setting('present'));
+  const represented = Number(db.prepare('SELECT COUNT(*) AS n FROM proxies').get().n);
+  const total = (present ?? 0) + represented;
+  // « La moitié des membres » : au moins la moitié, arrondi au membre supérieur.
+  const required = value === null ? null : unit === 'percent' ? Math.ceil((members * value) / 100) : value;
+  return {
+    members, value, unit, required, present, represented, total,
+    set: required !== null,
+    counted: present !== null,
+    reached: required !== null && present !== null && total >= required,
+    rate: members && present !== null ? (total / members) * 100 : null,
+  };
+}
+
 // --- Résultats --------------------------------------------------------------------------------------------------
 
 export function results() {
@@ -387,5 +440,5 @@ export function results() {
       tie: elected.length > 1,
     };
   });
-  return { positions: list, participation: voters };
+  return { positions: list, participation: voters, quorum: quorum() };
 }

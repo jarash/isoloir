@@ -118,7 +118,7 @@ function render(req, res, page, data = {}) {
     delete req.session.flash;
     writeSession(req, res);
   }
-  res.send(page({ ...data, user: req.user, csrf: req.session.csrf, flash: message, title: store.setting('title'), dev: DEV_LOGIN, path: req.path }));
+  res.send(page({ ...data, user: req.user, csrf: req.session.csrf, flash: message, title: store.setting('title'), description: store.setting('description'), dev: DEV_LOGIN, path: req.path }));
 }
 
 const requireLogin = (req, res, next) => (req.user ? next() : res.redirect('/'));
@@ -267,6 +267,7 @@ app.get('/admin', requireAdmin, (req, res) => {
     positions: store.positions(),
     proxies: store.proxies(),
     participation: store.participation(),
+    quorum: store.quorum(),
     resultsPublic: store.setting('results_public') === '1',
     maxProxies: store.MAX_PROXIES,
   });
@@ -274,10 +275,19 @@ app.get('/admin', requireAdmin, (req, res) => {
 
 app.get('/admin/participation', requireAdmin, (req, res) => {
   const { total, proxies } = store.participation();
-  res.json({ total, proxies, status: store.status() });
+  const q = store.quorum();
+  res.json({
+    total, proxies, status: store.status(),
+    quorumLabel: views.quorumLabel(q), quorumDetail: views.quorumDetail(q), quorumReached: q.reached, meter: views.quorumMeterWidth(q),
+  });
 });
 
 const id = (req) => Number(req.params.id);
+app.post('/admin/quorum', requireAdmin, adminAction((req) => store.setQuorum({
+  members: req.body.members, value: req.body.quorum_value, unit: req.body.quorum_unit,
+}), 'Quorum enregistré.'));
+app.post('/admin/present', requireAdmin, adminAction((req) => store.setPresent(req.body.present), 'Nombre de présents enregistré.'));
+app.post('/admin/description', requireAdmin, adminAction((req) => store.setDescription(req.body.description), 'Description enregistrée.'));
 app.post('/admin/title', requireAdmin, adminAction((req) => store.setTitle(req.body.title), 'Titre enregistré.'));
 app.post('/admin/positions', requireAdmin, adminAction((req) => store.addPosition(req.body.name)));
 app.post('/admin/positions/:id/delete', requireAdmin, adminAction((req) => store.deletePosition(id(req))));

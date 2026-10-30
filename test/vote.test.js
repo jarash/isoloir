@@ -70,6 +70,29 @@ test('les bulletins ne gardent aucun lien avec les votants', () => {
   assert.throws(() => store.db.prepare('SELECT rowid FROM ballots').get());
 });
 
+test('le quorum : présents saisis + représentés (procurations), arrondi au membre supérieur', () => {
+  // 1 procuration enregistrée (Dan → Alice). 50 % de 11 membres : 6 requis.
+  store.setQuorum({ members: '11', value: '50', unit: 'percent' });
+  let q = store.quorum();
+  assert.equal(q.required, 6);
+  assert.equal(q.counted, false);
+  assert.equal(q.reached, false);
+  store.setPresent('4');
+  q = store.quorum();
+  assert.equal(q.total, 5);
+  assert.equal(q.reached, false);
+  store.setPresent('5');
+  assert.equal(store.quorum().reached, true);
+  store.setQuorum({ members: '11', value: '7', unit: 'count' });
+  assert.equal(store.quorum().reached, false);
+  assert.throws(() => store.setQuorum({ value: '50', unit: 'percent' }), /nombre de membres/);
+  assert.throws(() => store.setQuorum({ members: '9', value: '120', unit: 'percent' }), /100 %/);
+  assert.throws(() => store.setQuorum({ members: '9', value: '10', unit: 'count' }), /dépasser/);
+  assert.throws(() => store.setPresent('-2'), /entier/);
+  store.setQuorum({ members: '', value: '', unit: 'percent' });
+  assert.equal(store.quorum().set, false);
+});
+
 test('le dépouillement', () => {
   store.closeVote();
   const { positions, participation } = store.results();
@@ -113,3 +136,11 @@ test('l’effacement de fin d’AG ne laisse rien', () => {
   assert.equal(store.status(), 'draft');
 });
 
+
+test('la description : listes, gras, liens, et aucun HTML saisi', async () => {
+  const { richText } = await import('../views.js');
+  const html = richText('Intro **quorum** <script>alert(1)</script>\n\n- un\n- deux https://exemple.fr/statuts.\n\n<img src=x onerror=alert(1)>');
+  assert.match(html, /<p>Intro <strong>quorum<\/strong> &lt;script&gt;/);
+  assert.match(html, /<ul><li>un<\/li><li>deux <a href="https:\/\/exemple.fr\/statuts" rel="noopener noreferrer">https:\/\/exemple.fr\/statuts<\/a>.<\/li><\/ul>/);
+  assert.doesNotMatch(html, /<script|<img/);
+});

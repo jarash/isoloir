@@ -5,7 +5,7 @@
 
 Le vote à bulletin secret de l'assemblée générale d'une association, quand l'AG se tient sur Discord : l'élection du bureau, avec procurations, quorum et procès-verbal.
 
-<!-- Capture d'écran : docs/capture-resultats.png (la page des résultats) -->
+![Les résultats d'une élection : quorum atteint, répartition des bulletins et détail des voix par poste](docs/capture-resultats.png)
 
 ## Ce qu'il fait
 

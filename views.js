@@ -369,7 +369,7 @@ export function results(data) {
     <header class="results-head">
       <h1>${e(title)}</h1>
       <p class="kpis">
-        <span><strong>${part.total}</strong> ${part.total > 1 ? 'voix exprimées' : 'voix exprimée'}</span>
+        <span><strong>${part.total}</strong> ${part.total > 1 ? 'votants' : 'votant'} <span class="muted small">(voix déposées)</span></span>
         <span><strong>${part.proxies}</strong> par procuration</span>
         ${r.quorum.rate !== null ? `<span><strong>${pct(r.quorum.rate)}</strong> des ${r.quorum.members} membres présents ou représentés</span>` : ''}
       </p>

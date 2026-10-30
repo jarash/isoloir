@@ -123,11 +123,27 @@ label.check { flex-direction: row; align-items: center; gap: .5rem; font-weight:
 .choice.blank { color: var(--text-secondary); }
 
 /* Administration */
+/* Un poste = un bloc encadré ; ses candidats sont dedans, en retrait. */
 .positions, .candidates { list-style: none; padding: 0; margin: 0; }
-.position { border-top: 1px solid var(--border); padding: .75rem 0; }
-.position .row { justify-content: space-between; margin: 0; }
-.candidates { padding-left: 1rem; margin: .35rem 0; }
-.candidates li { padding: .15rem 0; }
+.position { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .9rem; overflow: hidden; }
+.position-head {
+  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+  padding: .7rem 1rem; background: color-mix(in srgb, var(--accent) 10%, var(--surface-1));
+  border-bottom: 1px solid var(--border);
+}
+.position-head h3 { margin: 0; font-size: 1.15rem; }
+.position-body { padding: .75rem 1rem .5rem; }
+.eyebrow { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); }
+.candidates { margin: .35rem 0 .5rem; }
+.candidates li {
+  display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem; margin: 0 0 .3rem;
+  background: var(--surface-0); border-radius: 6px;
+}
+.candidates li form { margin-left: auto; }
+.candidates li.empty { background: none; padding-left: 0; font-style: italic; }
+.person { opacity: .7; }
+.link.small { font-size: .85rem; }
+.card.new-position { border-style: dashed; }
 .kpi { font-size: 1.1rem; }
 .kpi strong { font-size: 1.6rem; }
 .columns { columns: 12rem; padding-left: 1.2rem; }

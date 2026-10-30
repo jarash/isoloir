@@ -1,4 +1,19 @@
 // Isoloir : les pages HTML, rendues côté serveur.
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+
+// Une empreinte du contenu dans l'adresse des fichiers statiques : après une modification, le navigateur ne garde pas
+// l'ancienne version en cache.
+// En production, calculée une fois ; en dev, à chaque page, pour suivre les modifications.
+const fingerprints = new Map();
+function asset(file) {
+  if (!fingerprints.has(file) || process.env.NODE_ENV !== 'production') {
+    const content = readFileSync(new URL(`public/${file}`, import.meta.url));
+    fingerprints.set(file, `/${file}?v=${createHash('sha256').update(content).digest('hex').slice(0, 10)}`);
+  }
+  return fingerprints.get(file);
+}
+
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const e = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
@@ -28,9 +43,9 @@ function layout({ title, user, csrf, flash, dev }, pageTitle, body, { wide = fal
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${e(pageTitle)} · ${e(title)}</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="${asset('style.css')}">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <script src="/app.js" defer></script>
+  <script src="${asset('app.js')}" defer></script>
 </head>
 <body>
   <header class="top">
@@ -233,16 +248,25 @@ export function admin(data) {
       ${button('/admin/reset', csrf, 'Nouveau tour', { confirm: 'Effacer tous les votes et repasser en préparation ? Copiez les résultats avant : ils seront perdus.' })}`,
   }[status];
 
-  const positionList = positions.map((p) => `<li class="position">
-      <div class="row"><strong>${e(p.name)}</strong>
-        ${draft ? button(`/admin/positions/${p.id}/delete`, csrf, 'Supprimer le poste', { kind: 'link danger', confirm: `Supprimer le poste « ${p.name} » et ses candidats ?` }) : ''}</div>
-      <ul class="candidates">
-        ${p.candidates.map((c) => `<li>${e(c.name)} ${draft ? button(`/admin/candidates/${c.id}/delete`, csrf, '✕', { kind: 'link danger', confirm: `Retirer ${c.name} ?` }) : ''}</li>`).join('') || '<li class="muted">Aucun candidat</li>'}
-      </ul>
-      ${p.candidates.length === 1 ? '<p class="muted small">Candidature unique : on votera Pour / Contre / Blanc.</p>' : ''}
-      ${draft ? `<form method="post" action="/admin/positions/${p.id}/candidates" class="row">
-          ${csrfField(csrf)}<input name="name" placeholder="Nom du candidat ou de la candidate" required maxlength="100" aria-label="Nouveau candidat pour ${e(p.name)}">
-          <button>Ajouter</button></form>` : ''}
+  const positionList = positions.map((p, i) => `<li class="position">
+      <div class="position-head">
+        <div>
+          <span class="eyebrow">Poste ${i + 1}</span>
+          <h3>${e(p.name)}</h3>
+        </div>
+        ${draft ? button(`/admin/positions/${p.id}/delete`, csrf, 'Supprimer le poste', { kind: 'link danger', confirm: `Supprimer le poste « ${p.name} » et ses candidats ?` }) : ''}
+      </div>
+      <div class="position-body">
+        <span class="eyebrow">${p.candidates.length > 1 ? `${p.candidates.length} candidats` : p.candidates.length ? '1 candidat' : 'Candidats'}</span>
+        <ul class="candidates">
+          ${p.candidates.map((c) => `<li><span class="person" aria-hidden="true">👤</span> ${e(c.name)}
+            ${draft ? button(`/admin/candidates/${c.id}/delete`, csrf, 'Retirer', { kind: 'link danger small', confirm: `Retirer ${c.name} ?` }) : ''}</li>`).join('') || '<li class="muted empty">Aucun candidat pour l’instant</li>'}
+        </ul>
+        ${p.candidates.length === 1 ? '<p class="muted small">Candidature unique : on votera Pour / Contre / Blanc.</p>' : ''}
+        ${draft ? `<form method="post" action="/admin/positions/${p.id}/candidates" class="row">
+            ${csrfField(csrf)}<input name="name" placeholder="Nom du candidat ou de la candidate" required maxlength="100" aria-label="Nouveau candidat au poste ${e(p.name)}">
+            <button>+ Ajouter le candidat</button></form>` : ''}
+      </div>
     </li>`).join('');
 
   const canEditProxies = status !== 'closed';
@@ -281,11 +305,17 @@ export function admin(data) {
     <section class="card">
       <h2>Postes et candidats</h2>
       ${draft ? '' : '<p class="muted small">Modifiables seulement en préparation (après « Nouveau tour » une fois le vote clos).</p>'}
-      <ul class="positions">${positionList || '<li class="muted">Aucun poste pour l’instant.</li>'}</ul>
-      ${draft ? `<form method="post" action="/admin/positions" class="row">${csrfField(csrf)}
-          <input name="name" placeholder="Nouveau poste (Président·e, Trésorier·e…)" required maxlength="100" aria-label="Nouveau poste">
-          <button class="primary">Ajouter le poste</button></form>` : ''}
+      <ul class="positions">${positionList || '<li class="muted">Aucun poste pour l’instant : créez-en un ci-dessous.</li>'}</ul>
     </section>
+
+    ${draft ? `<section class="card new-position">
+      <h2>Créer un poste</h2>
+      <form method="post" action="/admin/positions" class="row">${csrfField(csrf)}
+        <input name="name" placeholder="Président·e, Trésorier·e, Secrétaire…" required maxlength="100" aria-label="Nom du nouveau poste">
+        <button class="primary">+ Créer le poste</button>
+      </form>
+      <p class="muted small">Ajoutez ensuite ses candidats dans le bloc du poste.</p>
+    </section>` : ''}
 
     <section class="card">
       <h2>Procurations</h2>

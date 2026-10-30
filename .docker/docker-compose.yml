@@ -20,7 +20,8 @@ services:
         required: false
     environment:
       NODE_ENV: development
-      DEV_LOGIN: "1"
+      # DEV_LOGIN=0 make up : la vraie connexion Discord (DISCORD_* dans .env.local).
+      DEV_LOGIN: "${DEV_LOGIN:-1}"
       DB_PATH: /app/var/isoloir.db
       BASE_URL: http://localhost:8890
       npm_config_cache: /tmp/npm

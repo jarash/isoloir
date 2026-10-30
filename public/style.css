@@ -288,3 +288,4 @@ tr.blank-row th, tr.blank-row td { color: var(--text-secondary); }
 /* Les bulletins et les résultats portent le liseré bleu du bandeau. */
 .card.ballot, .card.result { border-top: 3px solid var(--brand-glow); }
 .kpis strong, .kpi strong { font-family: var(--font-title); font-weight: 800; }
+.card.rich li + li { margin-top: .35rem; }

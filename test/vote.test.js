@@ -144,3 +144,11 @@ test('la description : listes, gras, liens, et aucun HTML saisi', async () => {
   assert.match(html, /<ul><li>un<\/li><li>deux <a href="https:\/\/exemple.fr\/statuts" rel="noopener noreferrer">https:\/\/exemple.fr\/statuts<\/a>.<\/li><\/ul>/);
   assert.doesNotMatch(html, /<script|<img/);
 });
+
+test('la page confidentialité signale ce qui manque et échappe ce qui est saisi', async () => {
+  const { privacy } = await import('../views.js');
+  const html = privacy({ title: 'AG', legal: { publisher: 'Asso <b>', retention: '2 mois', maxProxies: 1 } });
+  assert.match(html, /Asso &lt;b&gt;/);
+  assert.match(html, /à renseigner \(LEGAL_HOST/);
+  assert.match(html, /à renseigner \(CONTACT_EMAIL/);
+});

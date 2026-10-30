@@ -253,6 +253,17 @@ app.post('/vote', requireLogin, (req, res) => {
   res.redirect('/vote');
 });
 
+// Les mentions légales et l'information sur les données (RGPD), complétées par le .env.local.
+const LEGAL = {
+  publisher: env.LEGAL_PUBLISHER, address: env.LEGAL_ADDRESS, director: env.LEGAL_DIRECTOR,
+  host: env.LEGAL_HOST, contact: env.CONTACT_EMAIL, retention: env.RETENTION || 'deux mois après l’AG',
+  guild: !!env.GUILD_ID, role: !!env.VOTER_ROLE_ID, maxProxies: store.MAX_PROXIES,
+};
+const missingLegal = ['LEGAL_PUBLISHER', 'LEGAL_DIRECTOR', 'LEGAL_HOST', 'CONTACT_EMAIL'].filter((key) => !env[key]);
+if (missingLegal.length && !DEV_LOGIN) console.warn(`Mentions légales incomplètes (/confidentialite) : ${missingLegal.join(', ')}.`);
+
+app.get('/confidentialite', (req, res) => render(req, res, views.privacy, { legal: LEGAL }));
+
 app.get('/resultats', (req, res) => {
   const visible = store.status() === 'closed' && (req.user?.isAdmin || store.setting('results_public') === '1');
   if (!visible) return res.status(404).send(views.error('Les résultats ne sont pas encore publiés.'));

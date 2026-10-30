@@ -132,6 +132,7 @@ Une ligne JSON par requête (méthode, chemin, statut, durée) : jamais le conte
 
 ## Avant l'AG
 
+- [ ] Les mentions légales et le contact remplis dans `.env.local` (`LEGAL_*`, `CONTACT_EMAIL`, `RETENTION`) : `https://isoloir.exemple.fr/confidentialite` ne montre plus de « à renseigner ».
 - [ ] `https://isoloir.exemple.fr` s'ouvre avec un cadenas, et `https://isoloir.exemple.fr/health` répond `{"status":"ok"}`.
 - [ ] La connexion Discord marche avec ton compte (admin) et avec celui d'un membre (et elle est refusée à un compte hors du serveur, si `GUILD_ID` est rempli).
 - [ ] Une répétition : un poste de test, deux candidats, ouvrir, voter à deux, clore, regarder les résultats, puis **Nouveau tour** pour tout effacer.

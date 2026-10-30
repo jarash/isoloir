@@ -103,7 +103,7 @@ function layout({ title, user, csrf, flash, dev, path }, pageTitle, body, { wide
     ${flash ? `<p class="flash ${e(flash.type)}" role="status">${e(flash.text)}</p>` : ''}
     ${body}
   </main>
-  <footer class="bottom">Isoloir · le vote de l’AG de <a href="https://french-craft.com/">FrenchCraft</a> · ${version()}</footer>
+  <footer class="bottom">Isoloir · le vote de l’AG de <a href="https://french-craft.com/">FrenchCraft</a> · <a href="/confidentialite">Confidentialité et mentions légales</a> · ${version()}</footer>
 </body>
 </html>`;
 }
@@ -124,6 +124,7 @@ export function home(data) {
       <p>Le vote est anonyme : l’application note que vous avez voté, jamais pour qui.</p>
       <p class="status ${e(status)}">${STATUS_LABELS[status]}</p>
       <a class="button primary big" href="/login">Se connecter avec Discord</a>
+      <p class="muted small"><a href="/confidentialite">Ce que l’application fait de vos données</a></p>
     </section>`;
   } else if (!user.canVote) {
     body = `<section class="card"><h1>${e(title)}</h1>
@@ -515,3 +516,91 @@ export function wiped() {
     <p><a class="button" href="/">Retour à l’accueil</a></p>
   </section>`);
 }
+
+// --- Confidentialité et mentions légales ---------------------------------------------------------------------
+
+export function privacy(data) {
+  const { legal } = data;
+  const value = (text, key) => (text ? e(text) : `<span class="warn">à renseigner (${key} dans .env.local)</span>`);
+  const contact = legal.contact
+    ? `<a href="mailto:${e(legal.contact)}">${e(legal.contact)}</a>`
+    : value('', 'CONTACT_EMAIL');
+  return layout(data, 'Confidentialité et mentions légales', `
+    <h1>Confidentialité et mentions légales</h1>
+
+    <section class="card rich">
+      <h2>En bref</h2>
+      <ul>
+        <li><strong>Votre vote est secret.</strong> L’application enregistre <em>que</em> vous avez voté, jamais <em>pour qui</em> : les bulletins sont rangés à part, sans aucun lien avec votre compte.</li>
+        <li>Elle ne garde que le strict nécessaire (votre compte Discord et l’émargement), et l’efface après l’AG.</li>
+        <li>Aucune publicité, aucune mesure d’audience, aucun cookie autre que celui de la connexion.</li>
+      </ul>
+    </section>
+
+    <section class="card rich">
+      <h2>Qui est responsable ?</h2>
+      <p>${value(legal.publisher, 'LEGAL_PUBLISHER')}${legal.address ? `, ${e(legal.address)}` : ''}, qui organise le vote de son assemblée générale.
+        Pour toute question sur vos données : ${contact}.</p>
+    </section>
+
+    <section class="card rich">
+      <h2>Pourquoi et sur quelle base ?</h2>
+      <p>Pour organiser les votes de l’assemblée générale prévus par les statuts de l’association : vérifier qui peut voter,
+        empêcher les votes en double, gérer les procurations, établir l’émargement et le procès-verbal.
+        La base légale est la relation d’adhésion qui vous lie à l’association et ses statuts.</p>
+    </section>
+
+    <section class="card rich">
+      <h2>Quelles données ?</h2>
+      <ul>
+        <li><strong>Votre compte Discord</strong> : son identifiant, votre nom d’utilisateur et le nom affiché. Votre avatar est affiché depuis Discord, il n’est pas enregistré.</li>
+        ${legal.guild ? `<li><strong>Votre appartenance au serveur de l’association</strong>${legal.role ? ' et vos rôles' : ''} : vérifiés à la connexion pour savoir si vous pouvez voter, puis oubliés.</li>` : ''}
+        <li><strong>L’émargement</strong> : le fait que vous avez voté (et, pour une procuration, au nom de qui).</li>
+        <li><strong>Les procurations</strong> saisies par le bureau : le nom de la personne absente et le compte Discord de la personne qui vote pour elle (${plural(legal.maxProxies, 'procuration', 'procurations')} au plus par personne).</li>
+        <li><strong>Les bulletins</strong>, anonymes : pour chaque poste, le choix fait, sans nom, sans date, sans lien avec l’émargement.
+          Même les administrateurs ne peuvent pas savoir qui a voté quoi.</li>
+      </ul>
+      <p>L’application n’enregistre ni votre adresse e-mail, ni votre adresse IP, ni votre mot de passe Discord (la connexion se fait chez Discord).</p>
+    </section>
+
+    <section class="card rich">
+      <h2>Qui y a accès ?</h2>
+      <ul>
+        <li>Les administrateurs du scrutin, désignés par le bureau : l’émargement et les procurations.</li>
+        <li>Les membres : les résultats, anonymes, s’ils sont publiés, et le procès-verbal de l’AG (résultats et liste des votants).</li>
+        <li><strong>Discord</strong> (Discord Inc., États-Unis) assure la connexion et l’affichage des avatars, selon sa propre
+          <a href="https://discord.com/privacy" rel="noopener noreferrer">politique de confidentialité</a>. Aucune autre donnée ne lui est transmise.</li>
+      </ul>
+    </section>
+
+    <section class="card rich">
+      <h2>Combien de temps ?</h2>
+      <p>Les données du scrutin (comptes, émargement, procurations, bulletins) sont effacées au plus tard <strong>${e(legal.retention)}</strong>,
+        le temps qu’une éventuelle contestation puisse être examinée. Seul le procès-verbal de l’AG est conservé par l’association.
+        La connexion expire après 12 heures ; les sauvegardes techniques sont supprimées au bout de 14 jours.</p>
+    </section>
+
+    <section class="card rich">
+      <h2>Vos droits</h2>
+      <p>Vous pouvez demander l’accès à vos données, leur rectification ou leur effacement, ou vous opposer à leur traitement,
+        en écrivant à ${contact}. Un bulletin déposé ne peut ni être retrouvé ni modifié : c’est la garantie du secret du vote.
+        Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la <a href="https://www.cnil.fr/fr/plaintes" rel="noopener noreferrer">CNIL</a>.</p>
+    </section>
+
+    <section class="card rich">
+      <h2>Cookies</h2>
+      <p>Un seul cookie, <code>sid</code>, qui vous garde connecté·e pendant l’AG et protège les formulaires. Il est indispensable au fonctionnement du site
+        et ne sert à rien d’autre : il ne demande donc pas de consentement.</p>
+    </section>
+
+    <section class="card rich">
+      <h2>Mentions légales</h2>
+      <ul>
+        <li><strong>Éditeur</strong> : ${value(legal.publisher, 'LEGAL_PUBLISHER')}${legal.address ? `, ${e(legal.address)}` : ''}</li>
+        <li><strong>Directeur·rice de la publication</strong> : ${value(legal.director, 'LEGAL_DIRECTOR')}</li>
+        <li><strong>Hébergeur</strong> : ${value(legal.host, 'LEGAL_HOST')}</li>
+        <li><strong>Contact</strong> : ${contact}</li>
+      </ul>
+    </section>`);
+}
+

@@ -21,6 +21,8 @@ services:
       - .env.local        # secrets de production (non commité)
     volumes:
       - data:/data
+      # L'identité de l'association (logo, bandeau, thème : voir custom.example/), hors de l'image et du dépôt.
+      - ./custom:/app/custom:ro
 
 volumes:
   data:

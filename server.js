@@ -60,6 +60,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use(express.static('public', { maxAge: '1h' }));
+app.use('/custom', express.static(views.CUSTOM_DIR, { maxAge: '1h', dotfiles: 'ignore' }));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 // --- Sessions (en base, cookie httpOnly) et protection CSRF --------------------------------------------------------

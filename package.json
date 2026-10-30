@@ -2,6 +2,23 @@
   "name": "isoloir",
   "version": "1.0.0",
   "description": "Vote anonyme de l'élection du bureau en AG, connexion avec Discord, procurations et résultats visuels.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jarash/isoloir.git"
+  },
+  "homepage": "https://github.com/jarash/isoloir#readme",
+  "bugs": {
+    "url": "https://github.com/jarash/isoloir/issues"
+  },
+  "keywords": [
+    "vote",
+    "élection",
+    "assemblée générale",
+    "association",
+    "discord",
+    "anonyme"
+  ],
   "private": true,
   "type": "module",
   "main": "server.js",

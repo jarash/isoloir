@@ -1,6 +1,6 @@
 # Mise en ligne d'Isoloir
 
-Isoloir tourne sur le VPS à côté des autres sites (La Compo…). Le Caddy du serveur reçoit les visiteurs sur les ports 80/443, gère le HTTPS, et transmet à Isoloir ce qui le concerne. Isoloir, lui, écoute seulement sur `127.0.0.1:8084`, invisible depuis Internet.
+Isoloir s'installe sur un serveur (un petit VPS suffit) avec Docker, derrière un reverse proxy qui gère le domaine et le HTTPS : ce guide prend [Caddy](https://caddyserver.com), qui obtient seul ses certificats. Le reverse proxy reçoit les visiteurs sur les ports 80/443 et transmet à Isoloir, qui écoute seulement sur `127.0.0.1:8084`, invisible depuis Internet. D'autres sites peuvent tourner sur le même serveur, derrière le même Caddy.
 
 ```
 membre ──HTTPS──▶ Caddy du serveur ──HTTP──▶ 127.0.0.1:8084 ──▶ Isoloir (docker-compose.prod.shared.yml)
@@ -38,18 +38,31 @@ Les identifiants dont tu auras besoin (Discord → *Paramètres → Avancés →
 Docker et le plugin Compose doivent être installés (`docker compose version` répond). Puis :
 
 ```bash
-git clone git@github.com:TON_COMPTE/isoloir.git
+git clone https://github.com/jarash/isoloir.git   # ou ton fork
 cd isoloir
 cp .env.local.dist .env.local
 chmod 600 .env.local
 nano .env.local
 ```
 
-Remplis chaque valeur en suivant les commentaires du fichier. `HTTP_PORT` doit être un port libre (pas celui de La Compo).
+Remplis chaque valeur en suivant les commentaires du fichier. `HTTP_PORT` doit être un port libre sur le serveur.
+
+### Aux couleurs de l'association (facultatif)
+
+`ORG_NAME` et `ORG_URL` (dans `.env.local`) affichent le nom et le site de l'association dans l'en-tête et le pied de page. Pour le logo, un bandeau d'accueil et les couleurs, copie le modèle et adapte-le :
+
+```bash
+cp -r custom.example custom
+# puis : custom/logo.svg (ou .png), custom/banner.jpg, et les variables de custom/theme.css
+```
+
+Le dossier `custom/` reste sur le serveur, hors du dépôt git : il est monté dans le conteneur, un rechargement de la page suffit après une modification.
 
 ## 4. Le Caddy du serveur
 
-Ajoute ce bloc à la configuration du Caddy existant (souvent `/etc/caddy/Caddyfile`) :
+Pas encore de Caddy sur le serveur ? Sur Debian ou Ubuntu : [installe le paquet officiel](https://caddyserver.com/docs/install#debian-ubuntu-raspbian) (`sudo apt install caddy` une fois son dépôt ajouté) ; il démarre tout seul et lit `/etc/caddy/Caddyfile`. Un autre reverse proxy (nginx, Traefik…) convient aussi : il doit transmettre en HTTP à `127.0.0.1:8084` et gérer le HTTPS.
+
+Ajoute ce bloc à la configuration de Caddy (`/etc/caddy/Caddyfile`) :
 
 ```
 isoloir.exemple.fr {
@@ -119,7 +132,7 @@ Une ligne JSON par requête (méthode, chemin, statut, durée) : jamais le conte
 ## Après l'AG
 
 1. Dans **Administration** (vote clos) : **Télécharger les résultats**, à joindre au procès-verbal.
-2. **Effacer toutes les données** (taper `EFFACER`) : la base est vidée et réécrite, rien n'y reste récupérable.
+2. Une fois le délai de contestation passé (celui annoncé dans `RETENTION`, souvent deux mois) : **Effacer toutes les données** (taper `EFFACER`). La base est vidée et réécrite, rien n'y reste récupérable.
 3. Les sauvegardes, elles, sont hors de portée du site. Supprime-les, et retire la ligne cron si tu l'avais mise :
 
    ```bash

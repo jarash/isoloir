@@ -9,3 +9,8 @@ docs/
 test/
 .docker/docker-compose.yml
 *.md
+custom/
+custom.example/
+.github/
+LICENSE
+SECURITY.md

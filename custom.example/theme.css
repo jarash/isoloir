@@ -1,0 +1,34 @@
+/* Exemple de thème : copiez ce dossier en custom/ (à la racine du projet, hors git) et adaptez.
+ *
+ *   custom/theme.css     ce fichier : redéfinit les variables de public/style.css
+ *   custom/logo.svg      le logo de l'en-tête (ou logo.png, logo.webp) ; sinon, celui d'Isoloir
+ *   custom/banner.jpg    un bandeau en haut de l'accueil (ou banner.png, banner.webp) ; facultatif
+ *   custom/favicon.svg   l'icône de l'onglet ; facultatif
+ *
+ * Le nom et le site de l'association se règlent dans .env.local : ORG_NAME, ORG_URL.
+ * En production, docker-compose.prod.shared.yml monte ce dossier en lecture seule : pas besoin de reconstruire l'image,
+ * un simple rechargement de la page suffit.
+ */
+:root {
+  /* L'en-tête : un fond (couleur, dégradé, image), le texte et le texte secondaire. */
+  --header-bg: linear-gradient(180deg, #3b1f4f, #24122f);
+  --header-ink: #ffffff;
+  --header-ink-soft: #e2cdf0;
+  /* La couleur de la marque : trait sous les titres, liseré, anneau de l'avatar. */
+  --brand: #9b4dca;
+  /* La seconde couleur : déconnexion, boutons dangereux, point « en direct ». */
+  --brand-alt: #d0402f;
+  /* Les liens et les boutons principaux : gardez un bon contraste avec du texte blanc (4,5:1). */
+  --accent: #7a35a8;
+  --button: #7a35a8;
+  /* Une police déjà installée sur les appareils, sans fichier à fournir. */
+  --font-title: Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #c99cf0;
+    --button: #8c45bd;
+  }
+}
+/* Les couleurs des candidats dans les graphiques (--s1 à --s8) ont été choisies pour rester lisibles par les
+   daltoniens : mieux vaut ne pas y toucher. */

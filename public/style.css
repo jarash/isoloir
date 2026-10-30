@@ -1,21 +1,20 @@
-/* Isoloir : un seul fichier de styles, clair et sombre. Les pages doivent tenir à 400 px de large. */
-/* Aux couleurs de FrenchCraft (french-craft.com) : bleu marine profond, bleu électrique, rouge du logo.
-   En mode sombre, des fonds noirs neutres : le bleu reste pour l'en-tête et les accents. */
-@font-face { font-family: Poppins; font-weight: 600; font-display: swap; src: url(/fonts/poppins-600.woff2) format("woff2"); }
-@font-face { font-family: Poppins; font-weight: 700; font-display: swap; src: url(/fonts/poppins-700.woff2) format("woff2"); }
-@font-face { font-family: Poppins; font-weight: 800; font-display: swap; src: url(/fonts/poppins-800.woff2) format("woff2"); }
+/* Isoloir : un seul fichier de styles, clair et sombre. Les pages doivent tenir à 400 px de large.
+   L'identité d'une association (couleurs, en-tête, police) se change sans toucher ce fichier : custom/theme.css
+   redéfinit les variables « marque » ci-dessous (voir custom.example/theme.css). */
 
 :root {
   color-scheme: light;
-  --brand-navy: #0b1730;
-  --brand-navy-2: #12284d;
-  --brand-glow: #1e6bff;
-  --brand-red: #d43d27;
-  --surface-0: #eef2f8;
-  --surface-1: #ffffff;
-  --border: #d5dde9;
-  --text-primary: #0d1626;
-  --text-secondary: #4a5770;
+  /* La marque : l'en-tête, la couleur principale (accents, boutons), la seconde (danger, direct). */
+  --header-bg: linear-gradient(180deg, #232a36, #171c25);
+  --header-ink: #ffffff;
+  --header-ink-soft: #c9d3e3;
+  --brand: #2a78d6;
+  --brand-alt: #d0402f;
+  --surface-0: #f3f2ef;
+  --surface-1: #fcfcfb;
+  --border: #dddcd7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
   --accent: #1d5fd1;
   --button: #1d5fd1;
   --button-ink: #ffffff;
@@ -28,7 +27,9 @@
   --warning: #9a6500;
   --critical: #c0302f;
   --radius: 10px;
-  --font-title: Poppins, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Polices du système : rien à télécharger, aucune licence à joindre. */
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-title: var(--font-body);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -54,52 +55,48 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.5 var(--font-body);
   background: var(--surface-0);
   color: var(--text-primary);
 }
 a { color: var(--accent); }
 h1, h2, h3, .brand, button, .button { font-family: var(--font-title); }
 h1 { font-size: 1.7rem; font-weight: 800; margin: 0 0 1rem; line-height: 1.25; }
-/* Le trait bleu sous les titres, comme au survol du menu de french-craft.com. */
-h1::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: .45rem; border-radius: 2px; background: var(--brand-glow); }
+/* Un trait de la couleur de la marque sous les grands titres. */
+h1::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: .45rem; border-radius: 2px; background: var(--brand); }
 .hero h1::after { margin-inline: auto; }
 h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 .75rem; }
 
-/* L'en-tête reprend le bandeau du site : marine, diagonales lumineuses, liseré bleu en bas. */
+/* L'en-tête : un bandeau sombre, liseré de la couleur de la marque en bas. */
 .top {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  padding: .7rem 1.25rem; color: #fff;
-  background:
-    linear-gradient(115deg, transparent 0 62%, rgba(30, 107, 255, .35) 62.2%, transparent 62.6%),
-    linear-gradient(65deg, transparent 0 18%, rgba(30, 107, 255, .25) 18.2%, transparent 18.6%),
-    radial-gradient(ellipse at 50% 0%, var(--brand-navy-2), var(--brand-navy) 70%);
-  border-bottom: 2px solid var(--brand-glow);
-  box-shadow: 0 2px 14px rgba(30, 107, 255, .25);
+  padding: .7rem 1.25rem; color: var(--header-ink);
+  background: var(--header-bg);
+  border-bottom: 2px solid var(--brand);
 }
-.brand { display: flex; align-items: center; gap: .6rem; color: #fff; text-decoration: none; line-height: 1.1; }
+.brand { display: flex; align-items: center; gap: .6rem; color: var(--header-ink); text-decoration: none; line-height: 1.1; }
 .brand img { height: 32px; width: auto; }
 .brand strong { display: block; font-size: 1.25rem; font-weight: 800; letter-spacing: .01em; }
-.brand small { display: block; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #9fbfff; }
-/* Les boutons de l'en-tête : translucides sur le marine, le lien de la page en cours souligné de bleu. */
+.brand small { display: block; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--header-ink-soft); }
+/* Les boutons de l'en-tête : translucides sur le bandeau, la page en cours de la couleur de la marque. */
 .account { display: flex; align-items: center; gap: .5rem; font-size: .9rem; }
 .top-button {
   display: inline-flex; align-items: center; gap: .45rem; height: 2.25rem; padding: 0 .85rem;
-  font: 600 .88rem/1 var(--font-title); color: #e3ecff; text-decoration: none; cursor: pointer;
-  background: rgba(255, 255, 255, .06); border: 1px solid rgba(159, 191, 255, .28); border-radius: 999px;
+  font: 600 .88rem/1 var(--font-title); color: var(--header-ink-soft); text-decoration: none; cursor: pointer;
+  background: rgba(255, 255, 255, .06); border: 1px solid color-mix(in srgb, var(--header-ink-soft) 30%, transparent); border-radius: 999px;
   transition: background .15s, border-color .15s;
 }
-.top-button:hover { background: rgba(30, 107, 255, .22); border-color: var(--brand-glow); color: #fff; }
-.top-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-.top-button.active { background: rgba(30, 107, 255, .28); border-color: var(--brand-glow); color: #fff; }
+.top-button:hover { background: color-mix(in srgb, var(--brand) 22%, transparent); border-color: var(--brand); color: var(--header-ink); }
+.top-button:focus-visible { outline: 2px solid var(--header-ink); outline-offset: 2px; }
+.top-button.active { background: color-mix(in srgb, var(--brand) 28%, transparent); border-color: var(--brand); color: var(--header-ink); }
 .top-button.icon-only { width: 2.25rem; padding: 0; justify-content: center; }
-.top-button.icon-only:hover { background: rgba(212, 61, 39, .25); border-color: var(--brand-red); }
+.top-button.icon-only:hover { background: color-mix(in srgb, var(--brand-alt) 25%, transparent); border-color: var(--brand-alt); }
 .user-chip {
   display: inline-flex; align-items: center; gap: .5rem; height: 2.25rem; padding: 0 .85rem 0 .25rem;
-  color: #fff; font-weight: 600; background: rgba(0, 0, 0, .25); border-radius: 999px; max-width: 14rem;
+  color: var(--header-ink); font-weight: 600; background: rgba(0, 0, 0, .25); border-radius: 999px; max-width: 14rem;
 }
-.user-chip img, .avatar-initial { width: 28px; height: 28px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--brand-glow); }
-.avatar-initial { display: grid; place-items: center; background: var(--brand-glow); font: 800 .85rem var(--font-title); }
+.user-chip img, .avatar-initial { width: 28px; height: 28px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--brand); }
+.avatar-initial { display: grid; place-items: center; background: var(--brand); font: 800 .85rem var(--font-title); }
 .user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) {
   .user-name, .top-button:not(.icon-only) span { display: none; }
@@ -116,6 +113,7 @@ main.wide { max-width: 1100px; }
   padding: 1.25rem; margin: 0 0 1rem;
 }
 .hero { text-align: center; padding: 0 0 2.25rem; overflow: hidden; }
+.hero:not(:has(.banner)) { padding-top: 2.25rem; }
 .hero .banner { display: block; width: 100%; height: 110px; object-fit: cover; margin-bottom: 1.75rem; }
 .hero > :not(.banner) { margin-inline: 1.25rem; }
 footer.bottom { text-align: center; font-size: .8rem; color: var(--text-secondary); padding: 0 1rem 2rem; }
@@ -138,10 +136,10 @@ footer.bottom a { color: inherit; }
 .status.draft { color: var(--text-secondary); }
 .status.open { color: var(--good); }
 .status.closed { color: var(--text-secondary); }
-/* Le point rouge du direct, comme sur la TV de FrenchCraft. */
+/* Un point « en direct » qui clignote. */
 .status.open::before {
   content: ""; display: inline-block; width: .55rem; height: .55rem; margin-right: .4rem; border-radius: 50%;
-  background: var(--brand-red); vertical-align: 1px; animation: live 1.6s ease-in-out infinite;
+  background: var(--brand-alt); vertical-align: 1px; animation: live 1.6s ease-in-out infinite;
 }
 @keyframes live { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .status.open::before { animation: none; } }
@@ -154,9 +152,9 @@ button, .button {
 }
 button:hover, .button:hover { border-color: var(--accent); }
 .primary { background: var(--button); border-color: var(--button); color: var(--button-ink); }
-.primary:hover { border-color: var(--brand-glow); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-glow) 30%, transparent); }
+.primary:hover { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent); }
 .danger { color: var(--critical); }
-button.danger:not(.link) { background: var(--brand-red); border-color: var(--brand-red); color: #fff; }
+button.danger:not(.link) { background: var(--brand-alt); border-color: var(--brand-alt); color: #fff; }
 .big { padding: .8rem 1.4rem; font-size: 1.05rem; }
 .link { background: none; border: none; padding: 0; color: var(--accent); font-weight: 400; text-decoration: underline; }
 .link.danger { color: var(--critical); }
@@ -193,7 +191,7 @@ label.check { flex-direction: row; align-items: center; gap: .5rem; font-weight:
 .position { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .9rem; overflow: hidden; }
 .position-head {
   display: flex; justify-content: space-between; align-items: center; gap: .75rem;
-  padding: .7rem 1rem; background: color-mix(in srgb, var(--brand-glow) 10%, var(--surface-1));
+  padding: .7rem 1rem; background: color-mix(in srgb, var(--brand) 10%, var(--surface-1));
   border-bottom: 1px solid var(--border);
 }
 .position-head h3 { margin: 0; font-size: 1.15rem; }
@@ -228,8 +226,8 @@ select { font: inherit; padding: .5rem .65rem; border-radius: 8px; border: 1px s
 .rich ul { padding-left: 1.2rem; }
 .description-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .description-form textarea { font-family: inherit; font-size: .95rem; }
-.card.danger-zone { border-color: color-mix(in srgb, var(--brand-red) 55%, var(--border)); }
-.card.danger-zone h2 { color: var(--brand-red); }
+.card.danger-zone { border-color: color-mix(in srgb, var(--brand-alt) 55%, var(--border)); }
+.card.danger-zone h2 { color: var(--brand-alt); }
 .kpi { font-size: 1.1rem; }
 .kpi strong { font-size: 1.6rem; }
 .columns { columns: 12rem; padding-left: 1.2rem; }
@@ -286,6 +284,6 @@ tr.blank-row th, tr.blank-row td { color: var(--text-secondary); }
 }
 
 /* Les bulletins et les résultats portent le liseré bleu du bandeau. */
-.card.ballot, .card.result { border-top: 3px solid var(--brand-glow); }
+.card.ballot, .card.result { border-top: 3px solid var(--brand); }
 .kpis strong, .kpi strong { font-family: var(--font-title); font-weight: 800; }
 .card.rich li + li { margin-top: .35rem; }

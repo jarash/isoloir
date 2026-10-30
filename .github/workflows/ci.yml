@@ -1,0 +1,43 @@
+# Vérifie chaque push et chaque pull request : les tests, puis la construction de l'image de production.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm test
+
+  image:
+    name: Image Docker
+    runs-on: ubuntu-24.04
+    needs: tests
+    steps:
+      - uses: actions/checkout@v5
+      - name: Construction
+        run: docker build -f .docker/Dockerfile --build-arg APP_VERSION=${{ github.sha }} -t isoloir:ci .
+      - name: Démarrage et /health
+        run: |
+          docker run -d --name isoloir -p 3000:3000 \
+            -e DISCORD_CLIENT_ID=ci -e DISCORD_CLIENT_SECRET=ci -e BASE_URL=http://localhost:3000 isoloir:ci
+          for _ in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/health | grep -q '"status":"ok"'; then exit 0; fi
+            sleep 1
+          done
+          docker logs isoloir
+          exit 1

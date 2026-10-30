@@ -1,18 +1,33 @@
 // Isoloir : les pages HTML, rendues côté serveur.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = dirname(fileURLToPath(import.meta.url));
+const PRODUCTION = process.env.NODE_ENV === 'production';
+
+// L'identité d'une association, hors du dépôt : son nom et son site (.env.local), son logo, son bandeau et son thème
+// (dossier custom/, servi sous /custom ; voir custom.example/).
+export const CUSTOM_DIR = resolve(ROOT, process.env.CUSTOM_DIR || 'custom');
+const ORG_NAME = process.env.ORG_NAME?.trim() || '';
+const ORG_URL = process.env.ORG_URL?.trim() || '';
 
 // Une empreinte du contenu dans l'adresse des fichiers statiques : après une modification, le navigateur ne garde pas
-// l'ancienne version en cache.
-// En production, calculée une fois ; en dev, à chaque page, pour suivre les modifications.
+// l'ancienne version en cache. En production, calculée une fois ; en dev, à chaque page, pour suivre les modifications.
 const fingerprints = new Map();
-function asset(file) {
-  if (!fingerprints.has(file) || process.env.NODE_ENV !== 'production') {
-    const content = readFileSync(new URL(`public/${file}`, import.meta.url));
-    fingerprints.set(file, `/${file}?v=${createHash('sha256').update(content).digest('hex').slice(0, 10)}`);
+function fingerprint(path, url) {
+  if (!fingerprints.has(path) || !PRODUCTION) {
+    const content = existsSync(path) ? readFileSync(path) : null;
+    fingerprints.set(path, content && `${url}?v=${createHash('sha256').update(content).digest('hex').slice(0, 10)}`);
   }
-  return fingerprints.get(file);
+  return fingerprints.get(path);
 }
+const asset = (file) => fingerprint(join(ROOT, 'public', file), `/${file}`);
+// Le premier des fichiers proposés qui existe dans custom/, ou null.
+const custom = (...files) => files.map((file) => fingerprint(join(CUSTOM_DIR, file), `/custom/${file}`)).find(Boolean) ?? null;
+const logo = () => custom('logo.svg', 'logo.png', 'logo.webp') ?? asset('favicon.svg');
+const banner = () => custom('banner.jpg', 'banner.png', 'banner.webp');
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const e = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
@@ -90,12 +105,13 @@ function layout({ title, user, csrf, flash, dev, path }, pageTitle, body, { wide
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${e(pageTitle)} · ${e(title)}</title>
   <link rel="stylesheet" href="${asset('style.css')}">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  ${custom('theme.css') ? `<link rel="stylesheet" href="${custom('theme.css')}">` : ''}
+  <link rel="icon" href="${custom('favicon.svg') ?? asset('favicon.svg')}" type="image/svg+xml">
   <script src="${asset('app.js')}" defer></script>
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/"><img src="/img/logo-frc.png" alt="" width="31" height="36"><span><small>FrenchCraft</small><strong>Isoloir</strong></span></a>
+    <a class="brand" href="/"><img src="${logo()}" alt=""><span>${ORG_NAME ? `<small>${e(ORG_NAME)}</small>` : ''}<strong>Isoloir</strong></span></a>
     ${account}
   </header>
   ${dev ? '<p class="dev">Mode essai : connexion sans Discord. Ne pas utiliser pour le vrai vote.</p>' : ''}
@@ -103,7 +119,7 @@ function layout({ title, user, csrf, flash, dev, path }, pageTitle, body, { wide
     ${flash ? `<p class="flash ${e(flash.type)}" role="status">${e(flash.text)}</p>` : ''}
     ${body}
   </main>
-  <footer class="bottom">Isoloir · le vote de l’AG de <a href="https://french-craft.com/">FrenchCraft</a> · <a href="/confidentialite">Confidentialité et mentions légales</a> · ${version()}</footer>
+  <footer class="bottom">Isoloir${ORG_NAME ? ` · le vote de l’AG de ${ORG_URL ? `<a href="${e(ORG_URL)}" rel="noopener">${e(ORG_NAME)}</a>` : e(ORG_NAME)}` : ''} · <a href="/confidentialite">Confidentialité et mentions légales</a> · ${version()}</footer>
 </body>
 </html>`;
 }
@@ -119,7 +135,7 @@ export function home(data) {
   let body;
   if (!user) {
     body = `<section class="card hero">
-      <img class="banner" src="/img/bandeau.jpg" alt="FrenchCraft" width="2560" height="276">
+      ${banner() ? `<img class="banner" src="${banner()}" alt="${e(ORG_NAME)}">` : ''}
       <h1>${e(title)}</h1>
       <p>Le vote est anonyme : l’application note que vous avez voté, jamais pour qui.</p>
       <p class="status ${e(status)}">${STATUS_LABELS[status]}</p>

@@ -2,3 +2,4 @@
 /var/
 /.env.local
 /.env.*.local
+/custom/

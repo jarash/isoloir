@@ -116,6 +116,20 @@ docker logs -f isoloir_app
 
 Une ligne JSON par requête (méthode, chemin, statut, durée) : jamais le contenu d'un formulaire, donc jamais un choix de vote.
 
+## Après l'AG
+
+1. Dans **Administration** (vote clos) : **Télécharger les résultats**, à joindre au procès-verbal.
+2. **Effacer toutes les données** (taper `EFFACER`) : la base est vidée et réécrite, rien n'y reste récupérable.
+3. Les sauvegardes, elles, sont hors de portée du site. Supprime-les, et retire la ligne cron si tu l'avais mise :
+
+   ```bash
+   rm -f /var/backups/isoloir/db_*.sqlite.gz
+   ```
+
+   Si tu avais copié des sauvegardes ailleurs (`scp`), supprime-les aussi.
+4. Les logs (`docker logs isoloir_app`) ne contiennent ni nom ni vote : seulement l'heure et les pages visitées. Ils
+   disparaissent à la reconstruction du conteneur (`make prod-up`).
+
 ## Avant l'AG
 
 - [ ] `https://isoloir.exemple.fr` s'ouvre avec un cadenas, et `https://isoloir.exemple.fr/health` répond `{"status":"ok"}`.

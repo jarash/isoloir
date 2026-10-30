@@ -29,6 +29,17 @@ const ICONS = {
   login: icon('<path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M14 17l5-5-5-5"/><path d="M19 12H8"/>'),
 };
 
+// La version qui tourne : le commit, pour vérifier que le serveur exécute bien le code publié.
+function version() {
+  const value = process.env.APP_VERSION || 'dev';
+  const [sha, modified] = value.split('-');
+  if (!/^[0-9a-f]{40}$/.test(sha)) return `version ${e(value)}`;
+  const label = `version <code>${sha.slice(0, 7)}</code>`;
+  const repo = process.env.REPO_URL?.replace(/\/+$/, '');
+  const link = repo ? `<a href="${e(repo)}/tree/${sha}" title="Voir le code de cette version">${label}</a>` : label;
+  return modified ? `${link} <span class="warn" title="Le serveur tourne avec des modifications non commitées : ce code n’est pas celui publié.">(modifiée)</span>` : link;
+}
+
 const csrfField = (csrf) => `<input type="hidden" name="_csrf" value="${e(csrf)}">`;
 
 function button(action, csrf, label, { kind = '', confirm = '', fields = '' } = {}) {
@@ -70,7 +81,7 @@ function layout({ title, user, csrf, flash, dev, path }, pageTitle, body, { wide
     ${flash ? `<p class="flash ${e(flash.type)}" role="status">${e(flash.text)}</p>` : ''}
     ${body}
   </main>
-  <footer class="bottom">Isoloir · le vote de l’AG de <a href="https://french-craft.com/">FrenchCraft</a></footer>
+  <footer class="bottom">Isoloir · le vote de l’AG de <a href="https://french-craft.com/">FrenchCraft</a> · ${version()}</footer>
 </body>
 </html>`;
 }
@@ -138,15 +149,15 @@ function ballotForm(voice, positions, csrf) {
     const options = single
       ? [[String(p.candidates[0].id), `Pour (${p.candidates[0].name})`], ['against', 'Contre']]
       : p.candidates.map((c) => [String(c.id), c.name]);
-    options.push(['blank', 'Vote blanc']);
+    options.push(['blank', 'Vote blanc'], ['abstain', 'Abstention (ne pas se prononcer)']);
     const name = `pos_${p.id}`;
     return `<fieldset>
       <legend>${e(p.name)}${single ? ` <span class="muted">· candidature unique : ${e(p.candidates[0].name)}</span>` : ''}</legend>
-      ${options.map(([value, label]) => `<label class="choice${value === 'blank' ? ' blank' : ''}">
-        <input type="radio" name="${name}" value="${e(value)}" required> <span>${e(label)}</span></label>`).join('')}
+      ${options.map(([value, label]) => `<label class="choice${value === 'blank' || value === 'abstain' ? ' blank' : ''}">
+        <input type="radio" name="${name}" value="${e(value)}"> <span>${e(label)}</span></label>`).join('')}
     </fieldset>`;
   }).join('');
-  return `<form method="post" action="/vote" class="card ballot" data-confirm="Déposer ce bulletin ? Un vote est définitif.">
+  return `<form method="post" action="/vote" class="card ballot" data-ballot data-confirm="Déposer ce bulletin ? Un vote est définitif.">
     ${csrfField(csrf)}
     <input type="hidden" name="voice" value="${e(voice.key)}">
     <h2>Bulletin · ${e(voice.label)}</h2>
@@ -244,7 +255,7 @@ function positionResult(p, index) {
       <thead><tr><th scope="col">${p.single ? 'Réponse' : 'Candidat·e'}</th><th scope="col"><span class="sr-only">Graphique</span></th><th scope="col" class="num">Voix</th><th scope="col" class="num">% exprimés</th></tr></thead>
       <tbody>${rows}${blankRow}</tbody>
     </table>
-    <p class="muted small">${plural(p.expressed, 'suffrage exprimé', 'suffrages exprimés')} · les blancs ne comptent pas dans les %</p>
+    <p class="muted small">${plural(p.expressed, 'suffrage exprimé', 'suffrages exprimés')}${p.abstain ? ` · ${plural(p.abstain, 'abstention', 'abstentions')}` : ''} · blancs et abstentions ne comptent pas dans les %</p>
   </section>`;
 }
 
@@ -257,7 +268,7 @@ export function discordSummary(title, results) {
     else if (p.elected.length) head = `**${p.elected[0]}** élu·e`;
     else head = p.total ? `${p.candidate} non élu·e` : 'aucun bulletin';
     const detail = p.rows.map((r) => `${r.label} ${r.n} (${pct(r.pct)})`).join(' · ');
-    lines.push(`**${p.name}** : ${head}`, `> ${detail} · blancs : ${p.blank}`, '');
+    lines.push(`**${p.name}** : ${head}`, `> ${detail} · blancs : ${p.blank}${p.abstain ? ` · abstentions : ${p.abstain}` : ''}`, '');
   }
   return lines.join('\n').trimEnd();
 }
@@ -369,6 +380,18 @@ export function admin(data) {
       <p class="muted small">Ajoutez ensuite ses candidats dans le bloc du poste.</p>
     </section>` : ''}
 
+    ${status !== 'open' ? `<section class="card danger-zone">
+      <h2>Fin d’AG : effacer les données</h2>
+      <p>Efface <strong>tout</strong> : membres connectés, émargement, procurations, bulletins, postes et candidats.
+        Tout le monde est déconnecté. Irréversible.</p>
+      <p><a class="button" href="/admin/resultats.txt" download>Télécharger les résultats (pour le PV)</a></p>
+      <form method="post" action="/admin/wipe" class="row" data-confirm="Effacer définitivement toutes les données du scrutin ?">${csrfField(csrf)}
+        <input name="confirm" required autocomplete="off" placeholder="Tapez EFFACER" aria-label="Tapez EFFACER pour confirmer" pattern="EFFACER">
+        <button class="danger">Effacer toutes les données</button>
+      </form>
+      <p class="muted small">Les sauvegardes du serveur (/var/backups/isoloir) ne sont pas touchées : supprimez-les à la main.</p>
+    </section>` : ''}
+
     <section class="card">
       <h2>Procurations</h2>
       <p class="muted small">Un mandataire peut détenir au plus ${plural(maxProxies, 'procuration', 'procurations')} (MAX_PROXIES).
@@ -385,4 +408,12 @@ export function admin(data) {
         </form>
         <p class="muted small">Sans compte Discord renseigné, le mandant n’est pas empêché de voter lui-même : vérifiez à l’émargement.</p>` : ''}
     </section>`);
+}
+
+export function wiped() {
+  return layout({ title: 'Isoloir' }, 'Données effacées', `<section class="card hero">
+    <h1>Données effacées</h1>
+    <p>Toutes les données du scrutin ont été supprimées de la base. Merci et à la prochaine AG !</p>
+    <p><a class="button" href="/">Retour à l’accueil</a></p>
+  </section>`);
 }

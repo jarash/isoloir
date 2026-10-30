@@ -32,6 +32,8 @@ Voir [docs/deploiement.md](docs/deploiement.md) : application Discord, `.env.loc
 3. **Clore le vote** : les résultats apparaissent pour les admins. Partage ton écran sur Discord pour les annoncer, puis, si tu veux, **Publier aux membres** et copie le résumé dans un salon.
 4. **Nouveau tour** (s'il faut départager une égalité, ou pour un second tour) : efface votes et émargement. Pense à copier les résultats d'abord. Postes, candidats et procurations restent, et redeviennent modifiables.
 
+5. **Fin d'AG** : dans **Administration**, *Télécharger les résultats* (un fichier texte pour le PV), puis *Effacer toutes les données* (taper `EFFACER`). Membres, émargement, procurations, bulletins, postes : il ne reste rien dans la base, et tout le monde est déconnecté. Les sauvegardes du serveur sont à supprimer à la main (voir [docs/deploiement.md](docs/deploiement.md#après-lag)).
+
 Un vote est définitif : pas de modification une fois le bulletin déposé.
 
 ## Ce que l'anonymat suppose

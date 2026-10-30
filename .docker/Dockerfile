@@ -13,6 +13,10 @@ COPY . .
 
 # Le volume de la base appartient à l'utilisateur non root qui fait tourner le site.
 RUN mkdir -p /data && chown node:node /data
+# Le commit construit (make prod-up), affiché en pied de page : on peut le comparer au code publié.
+ARG APP_VERSION=inconnue
+ENV APP_VERSION=$APP_VERSION
+
 USER node
 VOLUME /data
 EXPOSE 3000

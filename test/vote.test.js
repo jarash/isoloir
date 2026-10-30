@@ -53,11 +53,13 @@ test('chaque voix vote une fois, le mandant ne vote pas', () => {
   assert.throws(() => store.castVote(alice, 'proxy:1', { [`pos_${presidence.id}`]: 'blank', [`pos_${tresorerie.id}`]: 'blank' }), /déjà voté/);
   assert.throws(() => store.castVote(dan, `self:${dan.id}`, { [`pos_${presidence.id}`]: 'blank', [`pos_${tresorerie.id}`]: 'blank' }), /procuration/);
   assert.throws(() => store.castVote(bob, 'proxy:1', {}), /pas la vôtre/);
-  assert.throws(() => store.castVote(bob, `self:${bob.id}`, { [`pos_${presidence.id}`]: 'blank' }), /Trésorerie/);
   assert.throws(() => store.castVote(bob, `self:${bob.id}`, { [`pos_${presidence.id}`]: 'against', [`pos_${tresorerie.id}`]: 'blank' }), /Présidence/);
 
   store.castVote(bob, `self:${bob.id}`, { [`pos_${presidence.id}`]: String(pAlice.id), [`pos_${tresorerie.id}`]: String(tCarole.id) });
   store.castVote(carole, `self:${carole.id}`, { [`pos_${presidence.id}`]: 'blank', [`pos_${tresorerie.id}`]: String(tCarole.id) });
+  // Eve s'abstient à la présidence (poste laissé vide) et à la trésorerie (« Abstention »).
+  const eve = member('eve');
+  store.castVote(eve, `self:${eve.id}`, { [`pos_${tresorerie.id}`]: 'abstain' });
   assert.throws(() => store.addProxy({ mandantName: 'Carole', mandantRef: 'carole', mandataireRef: 'bob' }), /déjà voté/);
 });
 
@@ -71,12 +73,14 @@ test('les bulletins ne gardent aucun lien avec les votants', () => {
 test('le dépouillement', () => {
   store.closeVote();
   const { positions, participation } = store.results();
-  assert.equal(participation.total, 4);
+  assert.equal(participation.total, 5);
   assert.equal(participation.proxies, 1);
 
   const [pres, treso] = positions;
   assert.deepEqual(pres.rows.map((r) => [r.label, r.n]), [['Alice', 2], ['Bob', 1]]);
   assert.equal(pres.blank, 1);
+  assert.equal(pres.abstain, 1);
+  assert.equal(treso.abstain, 1);
   assert.equal(pres.expressed, 3);
   assert.deepEqual(pres.elected, ['Alice']);
   assert.equal(Math.round(pres.rows[0].pct), 67);
@@ -86,6 +90,12 @@ test('le dépouillement', () => {
   assert.deepEqual(treso.elected, ['Carole']);
 });
 
+test('l’effacement de fin d’AG est refusé pendant le vote', () => {
+  store.setSetting('status', 'open');
+  assert.throws(() => store.wipeAll(), /ouvert/);
+  store.setSetting('status', 'closed');
+});
+
 test('un nouveau tour efface les votes, garde postes et procurations', () => {
   store.newRound();
   assert.equal(store.status(), 'draft');
@@ -93,3 +103,13 @@ test('un nouveau tour efface les votes, garde postes et procurations', () => {
   assert.equal(store.positions().length, 2);
   assert.equal(store.proxies().length, 1);
 });
+
+test('l’effacement de fin d’AG ne laisse rien', () => {
+  store.saveSession('x', { user: alice }, 60000);
+  store.wipeAll();
+  for (const table of ['ballots', 'voters', 'proxies', 'candidates', 'positions', 'users', 'sessions', 'settings']) {
+    assert.equal(store.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n, 0, table);
+  }
+  assert.equal(store.status(), 'draft');
+});
+

@@ -8,6 +8,8 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-inconnue}
     image: ${INSTANCE_NAME:-isoloir}-app
     container_name: ${INSTANCE_NAME:-isoloir}_app
     restart: unless-stopped

@@ -24,4 +24,5 @@ services:
       DEV_LOGIN: "${DEV_LOGIN:-1}"
       DB_PATH: /app/var/isoloir.db
       BASE_URL: http://localhost:8890
+      APP_VERSION: ${APP_VERSION:-dev}
       npm_config_cache: /tmp/npm

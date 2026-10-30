@@ -53,7 +53,7 @@ app.use((req, res, next) => {
 app.get('/health', (req, res) => {
   try {
     store.db.prepare('SELECT 1').get();
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', version: process.env.APP_VERSION || 'dev' });
   } catch {
     res.status(503).json({ status: 'error' });
   }
@@ -290,6 +290,37 @@ app.post('/admin/proxies/:id/delete', requireAdmin, adminAction((req) => store.d
 app.post('/admin/open', requireAdmin, adminAction(() => store.openVote(), 'Le vote est ouvert.'));
 app.post('/admin/close', requireAdmin, adminAction(() => store.closeVote(), 'Le vote est clos : les résultats sont prêts.'));
 app.post('/admin/publish', requireAdmin, adminAction((req) => store.setResultsPublic(req.body.public === '1')));
+// Les résultats en texte, à garder pour le procès-verbal avant d'effacer les données.
+app.get('/admin/resultats.txt', requireAdmin, (req, res) => {
+  const title = store.setting('title');
+  const date = new Date().toISOString().slice(0, 10);
+  const results = store.results();
+  const summary = views.discordSummary(title, results).replace(/\*\*/g, '').replace(/^> /gm, '  ');
+  // L'émargement : qui a voté (jamais pour qui), les voix par procuration avec leur mandataire.
+  const { names } = results.participation;
+  const voters = names.length ? names.map((name) => `- ${name}`).join('\n') : '(personne)';
+  res.attachment(`resultats-${date}.txt`).type('text/plain; charset=utf-8')
+    .send(`${summary}\n\nListe des votants (${names.length}) :\n${voters}\n`);
+});
+
+app.post('/admin/wipe', requireAdmin, (req, res) => {
+  if (String(req.body.confirm ?? '').trim() !== 'EFFACER') {
+    flash(req, res, 'error', 'Tapez EFFACER (en capitales) pour confirmer.');
+    return res.redirect('/admin');
+  }
+  try {
+    store.wipeAll();
+  } catch (error) {
+    if (!(error instanceof store.VoteError)) throw error;
+    flash(req, res, 'error', error.message);
+    return res.redirect('/admin');
+  }
+  console.log(JSON.stringify({ time: new Date().toISOString(), event: 'wipe' }));
+  // Les sessions sont effacées avec le reste : l'admin aussi est déconnecté.
+  res.append('Set-Cookie', `sid=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${SECURE ? '; Secure' : ''}`);
+  res.send(views.wiped());
+});
+
 app.post('/admin/reset', requireAdmin, adminAction(() => store.newRound(), 'Nouveau tour : les votes ont été effacés.'));
 
 app.use((req, res) => res.status(404).send(views.error('Page introuvable.')));

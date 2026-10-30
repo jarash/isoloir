@@ -2,7 +2,14 @@
 
 // Confirmation avant les actions définitives (dépôt d'un bulletin, ouverture, clôture…).
 document.addEventListener('submit', (event) => {
-  const message = event.target.dataset.confirm;
+  const form = event.target;
+  let message = form.dataset.confirm;
+  if (message && 'ballot' in form.dataset) {
+    const empty = [...form.querySelectorAll('fieldset')]
+      .filter((fieldset) => !fieldset.querySelector('input:checked'))
+      .map((fieldset) => fieldset.querySelector('legend').firstChild.textContent.trim());
+    if (empty.length) message = `Sans réponse, vous vous abstenez pour : ${empty.join(', ')}.\n\n${message}`;
+  }
   if (message && !window.confirm(message)) event.preventDefault();
 });
 

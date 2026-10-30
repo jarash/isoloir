@@ -209,6 +209,8 @@ label.check { flex-direction: row; align-items: center; gap: .5rem; font-weight:
 .person { opacity: .7; }
 .link.small { font-size: .85rem; }
 .card.new-position { border-style: dashed; }
+.card.danger-zone { border-color: color-mix(in srgb, var(--brand-red) 55%, var(--border)); }
+.card.danger-zone h2 { color: var(--brand-red); }
 .kpi { font-size: 1.1rem; }
 .kpi strong { font-size: 1.6rem; }
 .columns { columns: 12rem; padding-left: 1.2rem; }

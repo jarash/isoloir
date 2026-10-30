@@ -276,12 +276,14 @@ export function castVote(user, voiceKey, answers) {
     if (voice.voted) throw new VoteError('Cette voix a déjà voté.');
     if (voice.givenTo) throw new VoteError(`Vous avez donné procuration à ${voice.givenTo} : c’est à cette personne de voter.`);
 
-    const ballot = positions().map((p) => {
+    // Un poste sans réponse (ou « Abstention ») n'inscrit rien dans l'urne : l'abstention se déduit de l'émargement.
+    const ballot = positions().flatMap((p) => {
       const choice = String(answers[`pos_${p.id}`] ?? '');
+      if (choice === '' || choice === 'abstain') return [];
       const valid = ['blank', ...p.candidates.map((c) => String(c.id))];
       if (p.candidates.length === 1) valid.push('against');
-      if (!valid.includes(choice)) throw new VoteError(`Choisissez une réponse pour le poste « ${p.name} ».`);
-      return { positionId: p.id, choice };
+      if (!valid.includes(choice)) throw new VoteError(`Réponse inconnue pour le poste « ${p.name} ».`);
+      return [{ positionId: p.id, choice }];
     });
 
     db.prepare('INSERT INTO voters (voice_key, label) VALUES (?, ?)').run(voice.key, voice.voterLabel);
@@ -322,6 +324,17 @@ export function newRound() {
   db.exec('VACUUM');
 }
 
+// Fin d'AG : tout ce que la base contient est effacé (membres, émargement, procurations, urne, postes, sessions).
+// secure_delete écrase les pages libérées et VACUUM réécrit le fichier : rien ne reste récupérable dans la base.
+export function wipeAll() {
+  if (status() === 'open') throw new VoteError('Le vote est ouvert : closez-le avant d’effacer les données.');
+  transaction(() => {
+    db.exec(`DELETE FROM ballots; DELETE FROM voters; DELETE FROM proxies; DELETE FROM candidates;
+             DELETE FROM positions; DELETE FROM users; DELETE FROM sessions; DELETE FROM settings;`);
+  });
+  db.exec('VACUUM');
+}
+
 export function participation() {
   const voters = db.prepare('SELECT voice_key, label FROM voters ORDER BY label COLLATE NOCASE').all();
   return {
@@ -334,6 +347,7 @@ export function participation() {
 // --- Résultats --------------------------------------------------------------------------------------------------
 
 export function results() {
+  const voters = participation();
   const counts = new Map();
   for (const row of db.prepare('SELECT position_id, choice, COUNT(*) AS n FROM ballots GROUP BY position_id, choice').all()) {
     counts.set(`${row.position_id}:${row.choice}`, Number(row.n));
@@ -367,9 +381,11 @@ export function results() {
       blank,
       expressed,
       total: expressed + blank,
+      // Les postes sont figés pendant le vote : chaque voix émargée a répondu ou s'est abstenue sur chacun.
+      abstain: Math.max(0, voters.total - expressed - blank),
       elected,
       tie: elected.length > 1,
     };
   });
-  return { positions: list, participation: participation() };
+  return { positions: list, participation: voters };
 }

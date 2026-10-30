@@ -118,7 +118,7 @@ function render(req, res, page, data = {}) {
     delete req.session.flash;
     writeSession(req, res);
   }
-  res.send(page({ ...data, user: req.user, csrf: req.session.csrf, flash: message, title: store.setting('title'), dev: DEV_LOGIN }));
+  res.send(page({ ...data, user: req.user, csrf: req.session.csrf, flash: message, title: store.setting('title'), dev: DEV_LOGIN, path: req.path }));
 }
 
 const requireLogin = (req, res, next) => (req.user ? next() : res.redirect('/'));

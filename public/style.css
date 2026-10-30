@@ -1,5 +1,6 @@
 /* Isoloir : un seul fichier de styles, clair et sombre. Les pages doivent tenir à 400 px de large. */
-/* Aux couleurs de FrenchCraft (french-craft.com) : bleu marine profond, bleu électrique, rouge du logo. */
+/* Aux couleurs de FrenchCraft (french-craft.com) : bleu marine profond, bleu électrique, rouge du logo.
+   En mode sombre, des fonds noirs neutres : le bleu reste pour l'en-tête et les accents. */
 @font-face { font-family: Poppins; font-weight: 600; font-display: swap; src: url(/fonts/poppins-600.woff2) format("woff2"); }
 @font-face { font-family: Poppins; font-weight: 700; font-display: swap; src: url(/fonts/poppins-700.woff2) format("woff2"); }
 @font-face { font-family: Poppins; font-weight: 800; font-display: swap; src: url(/fonts/poppins-800.woff2) format("woff2"); }
@@ -32,18 +33,18 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --surface-0: #0a1222;
-    --surface-1: #15223a;
-    --border: #263859;
-    --text-primary: #eef2f8;
-    --text-secondary: #a9b6cc;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border: #33332f;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
     --accent: #6ea6ff;
     --button: #2468e0;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
     --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
-    --blank-mark: #3c4c6b;
-    --neutral-mark: #8a96ad;
-    --track: #1d2c48;
+    --blank-mark: #4a4945;
+    --neutral-mark: #8f8e86;
+    --track: #2a2a27;
     --good: #4cc27e;
     --warning: #e0a63a;
     --critical: #f07171;
@@ -80,9 +81,31 @@ h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 .75rem; }
 .brand img { height: 32px; width: auto; }
 .brand strong { display: block; font-size: 1.25rem; font-weight: 800; letter-spacing: .01em; }
 .brand small { display: block; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #9fbfff; }
-.account { display: flex; align-items: center; gap: .7rem; font-size: .9rem; }
-.account img { border-radius: 50%; outline: 2px solid var(--brand-glow); }
-.account a, .account .link { color: #cfe0ff; }
+/* Les boutons de l'en-tête : translucides sur le marine, le lien de la page en cours souligné de bleu. */
+.account { display: flex; align-items: center; gap: .5rem; font-size: .9rem; }
+.top-button {
+  display: inline-flex; align-items: center; gap: .45rem; height: 2.25rem; padding: 0 .85rem;
+  font: 600 .88rem/1 var(--font-title); color: #e3ecff; text-decoration: none; cursor: pointer;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(159, 191, 255, .28); border-radius: 999px;
+  transition: background .15s, border-color .15s;
+}
+.top-button:hover { background: rgba(30, 107, 255, .22); border-color: var(--brand-glow); color: #fff; }
+.top-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.top-button.active { background: rgba(30, 107, 255, .28); border-color: var(--brand-glow); color: #fff; }
+.top-button.icon-only { width: 2.25rem; padding: 0; justify-content: center; }
+.top-button.icon-only:hover { background: rgba(212, 61, 39, .25); border-color: var(--brand-red); }
+.user-chip {
+  display: inline-flex; align-items: center; gap: .5rem; height: 2.25rem; padding: 0 .85rem 0 .25rem;
+  color: #fff; font-weight: 600; background: rgba(0, 0, 0, .25); border-radius: 999px; max-width: 14rem;
+}
+.user-chip img, .avatar-initial { width: 28px; height: 28px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--brand-glow); }
+.avatar-initial { display: grid; place-items: center; background: var(--brand-glow); font: 800 .85rem var(--font-title); }
+.user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 480px) {
+  .user-name, .top-button:not(.icon-only) span { display: none; }
+  .user-chip { padding-right: .25rem; }
+  .top-button:not(.icon-only) { width: 2.25rem; padding: 0; justify-content: center; }
+}
 .dev { margin: 0; padding: .4rem 1rem; background: var(--warning); color: #fff; font-size: .85rem; text-align: center; }
 
 main { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }

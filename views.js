@@ -21,6 +21,14 @@ const STATUS_LABELS = { draft: 'En préparation', open: 'Vote ouvert', closed: '
 const pct = (value) => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 
+// Des icônes au trait, dans la couleur du texte (currentColor).
+const icon = (d) => `<svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICONS = {
+  admin: icon('<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>'),
+  logout: icon('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/>'),
+  login: icon('<path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M14 17l5-5-5-5"/><path d="M19 12H8"/>'),
+};
+
 const csrfField = (csrf) => `<input type="hidden" name="_csrf" value="${e(csrf)}">`;
 
 function button(action, csrf, label, { kind = '', confirm = '', fields = '' } = {}) {
@@ -28,15 +36,20 @@ function button(action, csrf, label, { kind = '', confirm = '', fields = '' } = 
     ${csrfField(csrf)}${fields}<button class="${e(kind)}">${label}</button></form>`;
 }
 
-function layout({ title, user, csrf, flash, dev }, pageTitle, body, { wide = false } = {}) {
+function layout({ title, user, csrf, flash, dev, path }, pageTitle, body, { wide = false } = {}) {
+  const initial = user ? e([...user.name][0]?.toUpperCase() ?? '?') : '';
+  const navLink = (href, label, icon) => `<a class="top-button${path === href || path?.startsWith(`${href}/`) ? ' active' : ''}" href="${href}"${path === href ? ' aria-current="page"' : ''}>${icon}<span>${label}</span></a>`;
   const account = user
-    ? `<div class="account">
-        ${user.avatar ? `<img src="${e(user.avatar)}" alt="" width="28" height="28">` : ''}
-        <span>${e(user.name)}</span>
-        ${user.isAdmin ? '<a href="/admin">Admin</a>' : ''}
-        ${button('/logout', csrf, 'Déconnexion', { kind: 'link' })}
-      </div>`
-    : '';
+    ? `<nav class="account" aria-label="Compte">
+        ${user.isAdmin ? navLink('/admin', 'Admin', ICONS.admin) : ''}
+        <span class="user-chip" title="${e(user.name)}">
+          ${user.avatar ? `<img src="${e(user.avatar)}" alt="" width="28" height="28">` : `<span class="avatar-initial" aria-hidden="true">${initial}</span>`}
+          <span class="user-name">${e(user.name)}</span>
+        </span>
+        <form method="post" action="/logout" class="inline">${csrfField(csrf)}
+          <button class="top-button icon-only" aria-label="Déconnexion" title="Déconnexion">${ICONS.logout}</button></form>
+      </nav>`
+    : (!path || path === '/' ? '' : `<nav class="account"><a class="top-button" href="/login">${ICONS.login}<span>Se connecter</span></a></nav>`);
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -49,7 +62,7 @@ function layout({ title, user, csrf, flash, dev }, pageTitle, body, { wide = fal
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/"><img src="/img/logo-frc.png" alt="" width="39" height="32"><span><small>FrenchCraft</small><strong>Isoloir</strong></span></a>
+    <a class="brand" href="/"><img src="/img/logo-frc.png" alt="" width="31" height="36"><span><small>FrenchCraft</small><strong>Isoloir</strong></span></a>
     ${account}
   </header>
   ${dev ? '<p class="dev">Mode essai : connexion sans Discord. Ne pas utiliser pour le vrai vote.</p>' : ''}

@@ -1,0 +1,11 @@
+# Hors de l'image : secrets, historique, état local.
+.env.local
+.env.*.local
+.git
+.claude
+node_modules/
+var/
+docs/
+test/
+.docker/docker-compose.yml
+*.md

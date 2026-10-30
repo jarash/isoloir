@@ -1,0 +1,25 @@
+# Production, derrière le Caddy du serveur (voir docs/deploiement.md). Une instance par INSTANCE_NAME (.env.local) :
+# ses conteneurs, son volume et ses sauvegardes portent ce nom.
+name: ${INSTANCE_NAME:-isoloir}
+
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile
+    image: ${INSTANCE_NAME:-isoloir}-app
+    container_name: ${INSTANCE_NAME:-isoloir}_app
+    restart: unless-stopped
+    ports:
+      # Joint par le Caddy du serveur seulement : un HTTP_PORT libre par instance (.env.local).
+      - "${HTTP_BIND_IP:-127.0.0.1}:${HTTP_PORT:-8084}:3000"
+    env_file:
+      - .env
+      - .env.local        # secrets de production (non commité)
+    volumes:
+      - data:/data
+
+volumes:
+  data:
+    name: ${INSTANCE_NAME:-isoloir}_data

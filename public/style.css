@@ -1,37 +1,49 @@
 /* Isoloir : un seul fichier de styles, clair et sombre. Les pages doivent tenir à 400 px de large. */
+/* Aux couleurs de FrenchCraft (french-craft.com) : bleu marine profond, bleu électrique, rouge du logo. */
+@font-face { font-family: Poppins; font-weight: 600; font-display: swap; src: url(/fonts/poppins-600.woff2) format("woff2"); }
+@font-face { font-family: Poppins; font-weight: 700; font-display: swap; src: url(/fonts/poppins-700.woff2) format("woff2"); }
+@font-face { font-family: Poppins; font-weight: 800; font-display: swap; src: url(/fonts/poppins-800.woff2) format("woff2"); }
+
 :root {
   color-scheme: light;
-  --surface-0: #f3f2ef;
-  --surface-1: #fcfcfb;
-  --border: #dddcd7;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --accent: #2a78d6;
-  --accent-ink: #ffffff;
+  --brand-navy: #0b1730;
+  --brand-navy-2: #12284d;
+  --brand-glow: #1e6bff;
+  --brand-red: #d43d27;
+  --surface-0: #eef2f8;
+  --surface-1: #ffffff;
+  --border: #d5dde9;
+  --text-primary: #0d1626;
+  --text-secondary: #4a5770;
+  --accent: #1d5fd1;
+  --button: #1d5fd1;
+  --button-ink: #ffffff;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
   --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
-  --blank-mark: #c9c8c2;
-  --neutral-mark: #8a8984;
-  --track: #ebeae6;
+  --blank-mark: #c3cad6;
+  --neutral-mark: #8a93a3;
+  --track: #e6ebf2;
   --good: #0a7a3d;
   --warning: #9a6500;
   --critical: #c0302f;
   --radius: 10px;
+  --font-title: Poppins, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --surface-0: #111110;
-    --surface-1: #1a1a19;
-    --border: #33332f;
-    --text-primary: #f0efec;
-    --text-secondary: #c3c2b7;
-    --accent: #3987e5;
+    --surface-0: #0a1222;
+    --surface-1: #15223a;
+    --border: #263859;
+    --text-primary: #eef2f8;
+    --text-secondary: #a9b6cc;
+    --accent: #6ea6ff;
+    --button: #2468e0;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
     --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
-    --blank-mark: #4a4945;
-    --neutral-mark: #8f8e86;
-    --track: #2a2a27;
+    --blank-mark: #3c4c6b;
+    --neutral-mark: #8a96ad;
+    --track: #1d2c48;
     --good: #4cc27e;
     --warning: #e0a63a;
     --critical: #f07171;
@@ -46,16 +58,31 @@ body {
   color: var(--text-primary);
 }
 a { color: var(--accent); }
-h1 { font-size: 1.6rem; margin: 0 0 .75rem; }
-h2 { font-size: 1.15rem; margin: 0 0 .75rem; }
+h1, h2, h3, .brand, button, .button { font-family: var(--font-title); }
+h1 { font-size: 1.7rem; font-weight: 800; margin: 0 0 1rem; line-height: 1.25; }
+/* Le trait bleu sous les titres, comme au survol du menu de french-craft.com. */
+h1::after { content: ""; display: block; width: 3rem; height: 3px; margin-top: .45rem; border-radius: 2px; background: var(--brand-glow); }
+.hero h1::after { margin-inline: auto; }
+h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 .75rem; }
 
+/* L'en-tête reprend le bandeau du site : marine, diagonales lumineuses, liseré bleu en bas. */
 .top {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  padding: .6rem 1rem; background: var(--surface-1); border-bottom: 1px solid var(--border);
+  padding: .7rem 1.25rem; color: #fff;
+  background:
+    linear-gradient(115deg, transparent 0 62%, rgba(30, 107, 255, .35) 62.2%, transparent 62.6%),
+    linear-gradient(65deg, transparent 0 18%, rgba(30, 107, 255, .25) 18.2%, transparent 18.6%),
+    radial-gradient(ellipse at 50% 0%, var(--brand-navy-2), var(--brand-navy) 70%);
+  border-bottom: 2px solid var(--brand-glow);
+  box-shadow: 0 2px 14px rgba(30, 107, 255, .25);
 }
-.brand { display: flex; align-items: center; gap: .4rem; font-weight: 700; color: inherit; text-decoration: none; }
-.account { display: flex; align-items: center; gap: .6rem; font-size: .9rem; }
-.account img { border-radius: 50%; }
+.brand { display: flex; align-items: center; gap: .6rem; color: #fff; text-decoration: none; line-height: 1.1; }
+.brand img { height: 32px; width: auto; }
+.brand strong { display: block; font-size: 1.25rem; font-weight: 800; letter-spacing: .01em; }
+.brand small { display: block; font-size: .7rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #9fbfff; }
+.account { display: flex; align-items: center; gap: .7rem; font-size: .9rem; }
+.account img { border-radius: 50%; outline: 2px solid var(--brand-glow); }
+.account a, .account .link { color: #cfe0ff; }
 .dev { margin: 0; padding: .4rem 1rem; background: var(--warning); color: #fff; font-size: .85rem; text-align: center; }
 
 main { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
@@ -65,7 +92,11 @@ main.wide { max-width: 1100px; }
   background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1.25rem; margin: 0 0 1rem;
 }
-.hero { text-align: center; padding: 2.5rem 1.25rem; }
+.hero { text-align: center; padding: 0 0 2.25rem; overflow: hidden; }
+.hero .banner { display: block; width: 100%; height: 110px; object-fit: cover; margin-bottom: 1.75rem; }
+.hero > :not(.banner) { margin-inline: 1.25rem; }
+footer.bottom { text-align: center; font-size: .8rem; color: var(--text-secondary); padding: 0 1rem 2rem; }
+footer.bottom a { color: inherit; }
 
 .muted { color: var(--text-secondary); }
 .small { font-size: .85rem; }
@@ -83,8 +114,14 @@ main.wide { max-width: 1100px; }
 }
 .status.draft { color: var(--text-secondary); }
 .status.open { color: var(--good); }
-.status.closed { color: var(--critical); }
-.status.open::before { content: "● "; }
+.status.closed { color: var(--text-secondary); }
+/* Le point rouge du direct, comme sur la TV de FrenchCraft. */
+.status.open::before {
+  content: ""; display: inline-block; width: .55rem; height: .55rem; margin-right: .4rem; border-radius: 50%;
+  background: var(--brand-red); vertical-align: 1px; animation: live 1.6s ease-in-out infinite;
+}
+@keyframes live { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .status.open::before { animation: none; } }
 
 /* Boutons et formulaires */
 button, .button {
@@ -93,9 +130,10 @@ button, .button {
   background: var(--surface-1); color: var(--text-primary);
 }
 button:hover, .button:hover { border-color: var(--accent); }
-.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.primary { background: var(--button); border-color: var(--button); color: var(--button-ink); }
+.primary:hover { border-color: var(--brand-glow); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-glow) 30%, transparent); }
 .danger { color: var(--critical); }
-button.danger:not(.link) { background: var(--critical); border-color: var(--critical); color: #fff; }
+button.danger:not(.link) { background: var(--brand-red); border-color: var(--brand-red); color: #fff; }
 .big { padding: .8rem 1.4rem; font-size: 1.05rem; }
 .link { background: none; border: none; padding: 0; color: var(--accent); font-weight: 400; text-decoration: underline; }
 .link.danger { color: var(--critical); }
@@ -122,7 +160,7 @@ label.check { flex-direction: row; align-items: center; gap: .5rem; font-weight:
   display: flex; align-items: center; gap: .6rem; padding: .55rem .5rem; border-radius: 6px; cursor: pointer;
 }
 .choice:hover { background: var(--surface-0); }
-.choice input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); }
+.choice input { width: 1.2rem; height: 1.2rem; accent-color: var(--button); }
 .choice:has(input:checked) { background: color-mix(in srgb, var(--accent) 12%, var(--surface-1)); font-weight: 600; }
 .choice.blank { color: var(--text-secondary); }
 
@@ -132,7 +170,7 @@ label.check { flex-direction: row; align-items: center; gap: .5rem; font-weight:
 .position { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 .9rem; overflow: hidden; }
 .position-head {
   display: flex; justify-content: space-between; align-items: center; gap: .75rem;
-  padding: .7rem 1rem; background: color-mix(in srgb, var(--accent) 10%, var(--surface-1));
+  padding: .7rem 1rem; background: color-mix(in srgb, var(--brand-glow) 10%, var(--surface-1));
   border-bottom: 1px solid var(--border);
 }
 .position-head h3 { margin: 0; font-size: 1.15rem; }
@@ -202,3 +240,7 @@ tr.blank-row th, tr.blank-row td { color: var(--text-secondary); }
   .top, .no-print, .dev { display: none; }
   body { background: #fff; }
 }
+
+/* Les bulletins et les résultats portent le liseré bleu du bandeau. */
+.card.ballot, .card.result { border-top: 3px solid var(--brand-glow); }
+.kpis strong, .kpi strong { font-family: var(--font-title); font-weight: 800; }

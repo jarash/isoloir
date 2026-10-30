@@ -49,7 +49,7 @@ function layout({ title, user, csrf, flash, dev }, pageTitle, body, { wide = fal
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"> Isoloir</a>
+    <a class="brand" href="/"><img src="/img/logo-frc.png" alt="" width="39" height="32"><span><small>FrenchCraft</small><strong>Isoloir</strong></span></a>
     ${account}
   </header>
   ${dev ? '<p class="dev">Mode essai : connexion sans Discord. Ne pas utiliser pour le vrai vote.</p>' : ''}
@@ -57,6 +57,7 @@ function layout({ title, user, csrf, flash, dev }, pageTitle, body, { wide = fal
     ${flash ? `<p class="flash ${e(flash.type)}" role="status">${e(flash.text)}</p>` : ''}
     ${body}
   </main>
+  <footer class="bottom">Isoloir · le vote de l’AG de <a href="https://french-craft.com/">FrenchCraft</a></footer>
 </body>
 </html>`;
 }
@@ -72,6 +73,7 @@ export function home(data) {
   let body;
   if (!user) {
     body = `<section class="card hero">
+      <img class="banner" src="/img/bandeau.jpg" alt="FrenchCraft" width="2560" height="276">
       <h1>${e(title)}</h1>
       <p>Le vote est anonyme : l’application note que vous avez voté, jamais pour qui.</p>
       <p class="status ${e(status)}">${STATUS_LABELS[status]}</p>
